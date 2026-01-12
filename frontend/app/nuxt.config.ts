@@ -26,6 +26,14 @@ export default defineNuxtConfig({
     },
   },
 
+  // Runtime config - accessible via useRuntimeConfig()
+  // Public config is exposed to the client-side code
+  runtimeConfig: {
+    public: {
+      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:5010',
+    },
+  },
+
   // Modules will be added here
   // modules: ['@vite-pwa/nuxt'],
 })
