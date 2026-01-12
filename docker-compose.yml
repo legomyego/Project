@@ -1,0 +1,41 @@
+# Docker Compose configuration for Recipe PWA development environment
+# This sets up PostgreSQL database for local development
+
+services:
+  # PostgreSQL database service
+  # Using Alpine variant for smaller image size
+  postgres:
+    image: postgres:16-alpine
+    container_name: recipes-postgres
+
+    # Environment variables for database initialization
+    # These credentials are for DEVELOPMENT ONLY - use secrets in production
+    environment:
+      POSTGRES_DB: recipes_db         # Database name
+      POSTGRES_USER: recipes_user     # Database username
+      POSTGRES_PASSWORD: dev_password # Database password (development only!)
+
+    # Expose PostgreSQL port to host machine
+    # Format: host_port:container_port
+    ports:
+      - "5432:5432"
+
+    # Persist database data between container restarts
+    # Data is stored in a named volume
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    # Health check to ensure database is ready before API starts
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U recipes_user -d recipes_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    # Always restart container unless explicitly stopped
+    restart: unless-stopped
+
+# Named volumes for data persistence
+volumes:
+  postgres_data:
+    driver: local
