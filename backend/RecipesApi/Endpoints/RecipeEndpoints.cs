@@ -42,6 +42,13 @@ public static class RecipeEndpoints
             .WithDescription("Returns the top 20 most viewed recipes. Uses memory cache for performance.")
             .CacheOutput(policy => policy.Expire(TimeSpan.FromMinutes(10))); // Cache for 10 minutes
 
+        // GET /api/recipes/my - Get user's owned recipes
+        group.MapGet("/my", GetMyRecipesAsync)
+            .WithName("GetMyRecipes")
+            .WithSummary("Get your owned recipes")
+            .WithDescription("Returns all recipes owned by the authenticated user (purchased or traded).")
+            .RequireAuthorization(); // Requires authentication
+
         // POST /api/recipes/{id}/buy - Purchase a recipe with points
         group.MapPost("/{id:guid}/buy", BuyRecipeAsync)
             .WithName("BuyRecipe")
@@ -233,6 +240,15 @@ public static class RecipeEndpoints
                 return Results.BadRequest(new { error = "You cannot buy your own recipe" });
             }
 
+            // Check if user already owns this recipe
+            var alreadyOwns = await db.UserRecipes
+                .AnyAsync(ur => ur.UserId == userId && ur.RecipeId == recipe.Id);
+
+            if (alreadyOwns)
+            {
+                return Results.BadRequest(new { error = "You already own this recipe" });
+            }
+
             // Check if user has sufficient balance
             if (buyer.Balance < recipe.Price)
             {
@@ -280,6 +296,17 @@ public static class RecipeEndpoints
                 db.Transactions.Add(saleTransaction);
             }
 
+            // Add recipe to user's owned recipes
+            var userRecipe = new UserRecipe
+            {
+                UserId = userId,
+                RecipeId = recipe.Id,
+                AcquisitionType = AcquisitionType.Purchase,
+                AcquiredAt = DateTime.UtcNow
+            };
+
+            db.UserRecipes.Add(userRecipe);
+
             // Save all changes
             await db.SaveChangesAsync();
 
@@ -309,5 +336,75 @@ public static class RecipeEndpoints
                 statusCode: 500
             );
         }
+    }
+
+    /// <summary>
+    /// Get all recipes owned by the authenticated user
+    /// Includes recipes acquired via purchase or trade
+    /// Returns with acquisition details (when and how obtained)
+    /// </summary>
+    private static async Task<IResult> GetMyRecipesAsync(
+        ClaimsPrincipal user,
+        AppDbContext db,
+        int page = 1,
+        int pageSize = 50)
+    {
+        // Get authenticated user ID from JWT claims
+        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        // Validate pagination parameters
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 50;
+
+        // Get total count for pagination metadata
+        var totalCount = await db.UserRecipes
+            .Where(ur => ur.UserId == userId)
+            .CountAsync();
+
+        // Fetch owned recipes with full details
+        var ownedRecipes = await db.UserRecipes
+            .Where(ur => ur.UserId == userId)
+            .Include(ur => ur.Recipe)
+                .ThenInclude(r => r!.Author) // Include recipe author
+            .OrderByDescending(ur => ur.AcquiredAt) // Most recently acquired first
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(ur => new
+            {
+                recipe = new
+                {
+                    id = ur.Recipe!.Id,
+                    title = ur.Recipe.Title,
+                    description = ur.Recipe.Description,
+                    price = ur.Recipe.Price,
+                    views = ur.Recipe.Views,
+                    createdAt = ur.Recipe.CreatedAt,
+                    author = new
+                    {
+                        id = ur.Recipe.Author!.Id,
+                        email = ur.Recipe.Author.Email
+                    }
+                },
+                // Acquisition details - when and how user got this recipe
+                acquiredAt = ur.AcquiredAt,
+                acquisitionType = ur.AcquisitionType.ToString() // "Purchase" or "Trade"
+            })
+            .ToListAsync();
+
+        return Results.Ok(new
+        {
+            recipes = ownedRecipes,
+            pagination = new
+            {
+                currentPage = page,
+                pageSize,
+                totalCount,
+                totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            }
+        });
     }
 }

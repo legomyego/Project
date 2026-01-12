@@ -206,65 +206,148 @@ export const useRecipes = () => {
 
 ## Development Plan
 
-### Phase 0: Setup (1-2 days)
-- [ ] Create repository (GitHub/GitLab)
-- [ ] Setup folder structure
-- [ ] Add CLAUDE.md
-- [ ] Docker Compose for local development (SQL Server)
+### Phase 0: Setup ✅ COMPLETE
+- [x] Create repository (GitHub/GitLab)
+- [x] Setup folder structure
+- [x] Add CLAUDE.md
+- [x] Docker Compose for local development (PostgreSQL)
 
-### Phase 1: Backend — Foundation (1-2 weeks)
+**Result**: ✅ Project structure ready, database running
+
+### Phase 1: Backend — Foundation ✅ COMPLETE
 **Goal**: Working API with authentication
 
-- [ ] Initialize .NET 8/9 project (Minimal APIs)
-- [ ] EF Core + data models:
-  - User (id, email, passwordHash, balance)
-  - Recipe (id, title, description, price, authorId)
-  - Transaction (id, userId, amount, type, createdAt)
-- [ ] JWT authentication (register, login, refresh tokens)
-- [ ] Basic endpoints:
-  - POST /auth/register, /auth/login
-  - GET /recipes, GET /recipes/{id}
-  - GET /users/me (profile + balance)
-- [ ] Swagger for testing
+- [x] Initialize .NET 9 project (Minimal APIs)
+- [x] EF Core + data models:
+  - User (id, email, passwordHash, balance, createdAt)
+  - Recipe (id, title, description, price, authorId, views, createdAt)
+  - Transaction (id, userId, amount, type, recipeId, createdAt)
+- [x] JWT authentication (register, login, logout)
+- [x] Authentication endpoints:
+  - POST /api/auth/register, /api/auth/login, /api/auth/logout
+  - JWT in httpOnly cookies
+- [x] User endpoints:
+  - GET /api/users/me (profile + balance)
+- [x] Recipe endpoints:
+  - GET /api/recipes (with pagination)
+  - GET /api/recipes/{id} (with view counter)
+  - GET /api/recipes/popular (cached)
+- [x] Swagger for testing
+- [x] CORS configured
 
-**Result**: API testable via Swagger/Postman
+**Result**: ✅ API fully functional at http://localhost:5010
 
-### Phase 2: Vue Frontend — Skeleton (1-2 weeks)
-**Goal**: Working personal dashboard
+### Phase 2: Vue Frontend — Authentication ✅ COMPLETE
+**Goal**: Working authentication and dashboard
 
-- [ ] Initialize Nuxt 3 project
-- [ ] Setup TypeScript, ESLint, Prettier
-- [ ] Authentication:
-  - Pages /login, /register
-  - JWT storage (useAuth composable)
-  - Middleware for protected routes
-- [ ] Personal dashboard:
-  - /dashboard — balance, recent transactions
-  - /recipes — purchased recipes list
-  - /profile — profile settings
-- [ ] Basic navigation and layout
+- [x] Initialize Nuxt 3 project with TypeScript
+- [x] Authentication composable (useAuth):
+  - register(), login(), logout(), fetchUser()
+  - JWT in httpOnly cookies
+  - Reactive user state
+- [x] Pages:
+  - / — Landing page with features
+  - /login — Login form
+  - /register — Registration form
+  - /dashboard — Protected dashboard with balance
+- [x] Auth middleware for protected routes
+- [x] Modern gradient design, responsive layout
 
-**Result**: Can login and see profile
+**Result**: ✅ Users can register, login, access dashboard
 
-### Phase 3: Core Functionality (2-3 weeks)
-**Goal**: Working points economy
+### Phase 3: Points Economy & Purchasing ✅ COMPLETE
+**Goal**: Working points system and recipe purchases
 
 Backend:
-- [ ] POST /points/purchase — buy points (stub without payment)
-- [ ] POST /recipes/{id}/buy — purchase recipe with points
-- [ ] GET /recipes/catalog — available recipes catalog
-- [ ] Balance validation, transactions
+- [x] POST /api/points/topup — add points (stub, ready for Stripe)
+- [x] GET /api/points/transactions — transaction history with pagination
+- [x] POST /api/recipes/{id}/buy — purchase recipe with points
+  - Database transactions for consistency
+  - Balance validation
+  - Transfer points to author
+  - Create purchase/sale transactions
 
 Frontend:
-- [ ] /catalog — browse and buy recipes
-- [ ] /recipes/{id} — recipe page
-- [ ] Balance top-up component
-- [ ] Transaction history
-- [ ] Toast notifications for success/errors
+- [x] Enhanced Dashboard (/dashboard):
+  - Balance display with gradient
+  - Points top-up form (quick buttons + custom)
+  - Recent transaction history (10 latest)
+  - Transaction icons (💰 TopUp, 🛒 Purchase, 💸 Sale)
+  - Link to recipe catalog
+- [x] Recipe Catalog (/recipes):
+  - Grid layout with cards
+  - Recipe details (title, description, price, views, author)
+  - Buy button with loading states
+  - "Your Recipe" indicator for own recipes
+  - Purchase confirmation modal
+  - Balance validation before purchase
+  - Pagination support
+- [x] Composables:
+  - usePoints() — top-up and transactions
+  - useRecipes() — listing and purchasing
+  - Auto balance refresh
 
-**Result**: Full cycle — top up points → buy recipe → see in collection
+**Result**: ✅ Full purchase flow working — add points → browse → buy → see in history
 
-### Phase 4: PWA (3-5 days)
+### Phase 4: Recipe Trading System 🚧 IN PROGRESS
+**Goal**: Users can trade recipes with each other
+
+Backend:
+- [ ] New models:
+  - UserRecipe (many-to-many: users own recipes)
+  - Trade (id, offeringUserId, offeredRecipeId, requestedUserId, requestedRecipeId, status, createdAt)
+- [ ] Recipe ownership endpoints:
+  - GET /api/recipes/my — my purchased/traded recipes
+- [ ] Trade endpoints:
+  - POST /api/trades/offer — offer a trade
+  - GET /api/trades/incoming — incoming trade offers
+  - GET /api/trades/outgoing — my trade offers
+  - POST /api/trades/{id}/accept — accept trade
+  - POST /api/trades/{id}/decline — decline trade
+  - POST /api/trades/{id}/cancel — cancel my offer
+
+Frontend:
+- [ ] My Recipes page (/my-recipes):
+  - List of owned recipes
+  - "Offer Trade" button on each
+- [ ] Trade Offers page (/trades):
+  - Tabs: Incoming / Outgoing
+  - Offer details (who, what recipes, when)
+  - Accept/Decline buttons
+- [ ] Trade offer modal:
+  - Select my recipe to offer
+  - Select their recipe to request
+  - Confirm trade offer
+
+**Result**: Users can exchange recipes without spending points
+
+### Phase 5: Security & Account Management 📋 PLANNED
+**Goal**: Production-ready security and user management
+
+Backend:
+- [ ] Rate Limiting for DDoS protection:
+  - ASP.NET built-in middleware
+  - Configure limits per endpoint
+  - IP-based throttling
+- [ ] Password management:
+  - POST /api/users/change-password — change password for authenticated user
+  - POST /api/auth/forgot-password — send reset email
+  - POST /api/auth/reset-password — reset with token
+  - Email service (SMTP configuration)
+- [ ] CAPTCHA integration:
+  - Google reCAPTCHA v3 (invisible)
+  - Verify on registration and login
+  - Configurable threshold
+
+Frontend:
+- [ ] Change password form in dashboard/profile
+- [ ] Forgot password flow on login page
+- [ ] Reset password page with token validation
+- [ ] CAPTCHA integration (invisible to users)
+
+**Result**: Secure, production-ready authentication system
+
+### Phase 6: PWA (3-5 days)
 **Goal**: Install on phone, offline access
 
 - [ ] Connect @vite-pwa/nuxt
@@ -275,7 +358,7 @@ Frontend:
 
 **Result**: App installable, recipes available offline
 
-### Phase 5: React Admin Panel (2-3 weeks)
+### Phase 7: React Admin Panel (2-3 weeks)
 **Goal**: Learn React on real task
 
 - [ ] Initialize React + Vite + TypeScript

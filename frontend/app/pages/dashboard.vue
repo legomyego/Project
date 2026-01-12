@@ -66,6 +66,22 @@
             <p>Discover and purchase recipes</p>
           </div>
         </NuxtLink>
+
+        <NuxtLink to="/my-recipes" class="link-card">
+          <div class="link-icon">🍳</div>
+          <div class="link-text">
+            <h3>My Recipes</h3>
+            <p>View your owned recipes and trade</p>
+          </div>
+        </NuxtLink>
+
+        <NuxtLink to="/trades" class="link-card">
+          <div class="link-icon">🔄</div>
+          <div class="link-text">
+            <h3>Trade Offers</h3>
+            <p>Manage incoming and outgoing trades</p>
+          </div>
+        </NuxtLink>
       </div>
 
       <!-- Transaction History -->
@@ -431,6 +447,9 @@ const getAmountClass = (amount: number) => {
 
 /* Quick links */
 .quick-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
   margin-bottom: 2rem;
 }
 

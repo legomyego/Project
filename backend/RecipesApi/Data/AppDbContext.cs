@@ -39,6 +39,20 @@ public class AppDbContext : DbContext
     public DbSet<Transaction> Transactions => Set<Transaction>();
 
     /// <summary>
+    /// DbSet for UserRecipes junction table
+    /// Represents the many-to-many relationship between Users and Recipes
+    /// Tracks which recipes each user owns (via purchase or trade)
+    /// </summary>
+    public DbSet<UserRecipe> UserRecipes => Set<UserRecipe>();
+
+    /// <summary>
+    /// DbSet for Trades table
+    /// Contains all trade offers between users for recipe exchanges
+    /// EF Core maps this to a "Trades" table
+    /// </summary>
+    public DbSet<Trade> Trades => Set<Trade>();
+
+    /// <summary>
     /// Configure entity relationships and constraints using Fluent API
     /// This method is called when EF Core creates the model
     /// </summary>
@@ -132,6 +146,76 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(t => t.RecipeId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configure UserRecipe junction table (many-to-many between User and Recipe)
+        modelBuilder.Entity<UserRecipe>(entity =>
+        {
+            // Composite primary key: combination of UserId and RecipeId must be unique
+            // A user can only own a specific recipe once
+            entity.HasKey(ur => new { ur.UserId, ur.RecipeId });
+
+            // AcquisitionType is stored as integer enum (0=Purchase, 1=Trade)
+            entity.Property(ur => ur.AcquisitionType)
+                .HasConversion<int>();
+
+            // AcquiredAt defaults to current UTC time
+            entity.Property(ur => ur.AcquiredAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            // Configure relationship: UserRecipe belongs to User
+            // When a User is deleted, their owned recipes are also deleted (cascade)
+            entity.HasOne(ur => ur.User)
+                .WithMany(u => u.OwnedRecipes)
+                .HasForeignKey(ur => ur.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure relationship: UserRecipe belongs to Recipe
+            // When a Recipe is deleted, ownership records are also deleted (cascade)
+            entity.HasOne(ur => ur.Recipe)
+                .WithMany()
+                .HasForeignKey(ur => ur.RecipeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure Trade entity
+        modelBuilder.Entity<Trade>(entity =>
+        {
+            // Status is stored as integer enum (0=Pending, 1=Accepted, 2=Declined, 3=Cancelled)
+            entity.Property(t => t.Status)
+                .HasConversion<int>();
+
+            // CreatedAt defaults to current UTC time
+            entity.Property(t => t.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            // Configure relationship: Trade has an offering user (who initiated the trade)
+            // When a User is deleted, their offered trades are deleted (cascade)
+            entity.HasOne(t => t.OfferingUser)
+                .WithMany()
+                .HasForeignKey(t => t.OfferingUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure relationship: Trade has an offered recipe (what the offering user gives)
+            // When a Recipe is deleted, trades referencing it are deleted (cascade)
+            entity.HasOne(t => t.OfferedRecipe)
+                .WithMany()
+                .HasForeignKey(t => t.OfferedRecipeId)
+                .OnDelete(DeleteBehavior.Restrict); // Restrict to prevent accidental deletion
+
+            // Configure relationship: Trade has a requested user (who receives the offer)
+            // When a User is deleted, trades targeting them are deleted (cascade)
+            entity.HasOne(t => t.RequestedUser)
+                .WithMany()
+                .HasForeignKey(t => t.RequestedUserId)
+                .OnDelete(DeleteBehavior.Restrict); // Restrict to prevent cascade conflict with OfferingUser
+
+            // Configure relationship: Trade has a requested recipe (what the offering user wants)
+            // When a Recipe is deleted, trades requesting it are deleted (cascade)
+            entity.HasOne(t => t.RequestedRecipe)
+                .WithMany()
+                .HasForeignKey(t => t.RequestedRecipeId)
+                .OnDelete(DeleteBehavior.Restrict); // Restrict to prevent accidental deletion
         });
     }
 }

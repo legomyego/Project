@@ -217,6 +217,7 @@ app.MapAuthEndpoints();     // Authentication: /api/auth/*
 app.MapUserEndpoints();     // Users: /api/users/*
 app.MapRecipeEndpoints();   // Recipes: /api/recipes/*
 app.MapPointsEndpoints();   // Points: /api/points/*
+app.MapTradeEndpoints();    // Trades: /api/trades/*
 
 // ==================== START APPLICATION ====================
 

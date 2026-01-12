@@ -96,7 +96,7 @@ public static class AuthEndpoints
         {
             HttpOnly = true,
             Secure = false, // Set to true in production with HTTPS
-            SameSite = SameSiteMode.Lax,
+            SameSite = SameSiteMode.None, // None allows cross-origin cookie for localhost
             Expires = DateTimeOffset.UtcNow.AddDays(7) // Cookie expires in 7 days
         });
 
@@ -154,7 +154,7 @@ public static class AuthEndpoints
         {
             HttpOnly = true,
             Secure = false, // Set to true in production with HTTPS
-            SameSite = SameSiteMode.Lax,
+            SameSite = SameSiteMode.None, // None allows cross-origin cookie for localhost
             Expires = DateTimeOffset.UtcNow.AddDays(7)
         });
 

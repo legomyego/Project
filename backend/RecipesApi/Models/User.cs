@@ -48,4 +48,11 @@ public class User
     /// Includes purchases, sales, and point top-ups
     /// </summary>
     public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
+
+    /// <summary>
+    /// Navigation property: recipes owned by this user
+    /// Represents the many-to-many relationship through UserRecipe junction table
+    /// Includes recipes acquired via purchase or trade
+    /// </summary>
+    public ICollection<UserRecipe> OwnedRecipes { get; set; } = new List<UserRecipe>();
 }
