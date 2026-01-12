@@ -1,0 +1,5 @@
+{
+  // TypeScript configuration for Nuxt 3
+  // This extends Nuxt's auto-generated config
+  "extends": "./.nuxt/tsconfig.json"
+}

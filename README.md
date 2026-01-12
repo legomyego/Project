@@ -84,7 +84,7 @@ npm install
 npm run dev
 
 # Admin panel will be available at:
-# http://localhost:3001
+# http://localhost:5173
 ```
 
 ## Database Connection
