@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RecipesApi.Data;
+using RecipesApi.Endpoints;
 using RecipesApi.Services;
 
 // Create the web application builder
@@ -104,10 +105,10 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        // Allow requests from Nuxt app (port 3000) and React admin (port 3001)
+        // Allow requests from Nuxt app (port 3000) and React admin (port 5173)
         policy.WithOrigins(
                 "http://localhost:3000",  // Nuxt main app
-                "http://localhost:3001"   // React admin panel
+                "http://localhost:5173"   // React admin panel
             )
             // Allow credentials (cookies) to be sent with requests
             // Required for httpOnly cookie authentication
@@ -210,11 +211,11 @@ app.MapGet("/api/health", () => new
 .WithName("HealthCheck")
 .WithTags("System");
 
-// TODO: Add endpoint groups here
-// - Authentication endpoints (register, login, logout)
-// - User endpoints (get profile, update profile)
-// - Recipe endpoints (list, get, create, buy)
-// - Transaction endpoints (history, top-up)
+// Register API endpoint groups
+// Each endpoint group is defined in a separate file in the Endpoints folder
+app.MapAuthEndpoints();     // Authentication: /api/auth/*
+app.MapUserEndpoints();     // Users: /api/users/*
+app.MapRecipeEndpoints();   // Recipes: /api/recipes/*
 
 // ==================== START APPLICATION ====================
 
