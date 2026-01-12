@@ -11,48 +11,101 @@
       <p>Loading...</p>
     </div>
 
-    <!-- User profile card -->
+    <!-- Main content -->
     <div v-else class="content">
+      <!-- Balance Card -->
       <div class="card">
-        <h2>Welcome, {{ user.email }}!</h2>
-
-        <div class="balance-section">
-          <div class="balance-label">Your Balance</div>
+        <h2>Your Balance</h2>
+        <div class="balance-display">
           <div class="balance-amount">{{ user.balance }} points</div>
         </div>
 
-        <div class="user-info">
-          <div class="info-row">
-            <span class="info-label">User ID:</span>
-            <span class="info-value">{{ user.id }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Email:</span>
-            <span class="info-value">{{ user.email }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Member since:</span>
-            <span class="info-value">{{ formatDate(user.createdAt) }}</span>
-          </div>
+        <!-- Top-up form -->
+        <div class="topup-section">
+          <h3>Add Points</h3>
+          <div v-if="topupError" class="error-message">{{ topupError }}</div>
+          <div v-if="topupSuccess" class="success-message">{{ topupSuccess }}</div>
+
+          <form @submit.prevent="handleTopUp" class="topup-form">
+            <div class="amount-buttons">
+              <button
+                type="button"
+                v-for="amount in [10, 50, 100, 500]"
+                :key="amount"
+                @click="topupAmount = amount"
+                :class="{ active: topupAmount === amount }"
+                class="amount-btn"
+              >
+                {{ amount }} points
+              </button>
+            </div>
+
+            <div class="custom-amount">
+              <input
+                v-model.number="topupAmount"
+                type="number"
+                min="1"
+                placeholder="Or enter custom amount"
+                :disabled="isTopupLoading"
+              />
+            </div>
+
+            <button type="submit" class="btn-primary" :disabled="isTopupLoading || !topupAmount">
+              {{ isTopupLoading ? 'Processing...' : `Add ${topupAmount || 0} Points` }}
+            </button>
+          </form>
         </div>
       </div>
 
-      <!-- Quick actions -->
-      <div class="actions">
-        <h3>Quick Actions</h3>
-        <div class="action-buttons">
-          <button class="btn-action" disabled>
-            Browse Recipes
-            <small>Coming soon</small>
-          </button>
-          <button class="btn-action" disabled>
-            Top Up Points
-            <small>Coming soon</small>
-          </button>
-          <button class="btn-action" disabled>
-            My Recipes
-            <small>Coming soon</small>
-          </button>
+      <!-- Quick Links -->
+      <div class="quick-links">
+        <NuxtLink to="/recipes" class="link-card">
+          <div class="link-icon">📖</div>
+          <div class="link-text">
+            <h3>Browse Recipes</h3>
+            <p>Discover and purchase recipes</p>
+          </div>
+        </NuxtLink>
+      </div>
+
+      <!-- Transaction History -->
+      <div class="card transactions-card">
+        <h3>Recent Transactions</h3>
+
+        <div v-if="isLoadingTransactions" class="loading-small">
+          Loading transactions...
+        </div>
+
+        <div v-else-if="transactions.length === 0" class="empty-state">
+          <p>No transactions yet</p>
+        </div>
+
+        <div v-else class="transactions-list">
+          <div
+            v-for="transaction in transactions"
+            :key="transaction.id"
+            class="transaction-item"
+            :class="getTransactionClass(transaction.type)"
+          >
+            <div class="transaction-main">
+              <div class="transaction-type">
+                {{ getTransactionIcon(transaction.type) }}
+                {{ getTransactionLabel(transaction.type) }}
+              </div>
+              <div v-if="transaction.recipe" class="transaction-recipe">
+                {{ transaction.recipe.title }}
+              </div>
+            </div>
+
+            <div class="transaction-details">
+              <div class="transaction-amount" :class="getAmountClass(transaction.amount)">
+                {{ transaction.amount > 0 ? '+' : '' }}{{ transaction.amount }} points
+              </div>
+              <div class="transaction-date">
+                {{ formatDate(transaction.createdAt) }}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -60,40 +113,133 @@
 </template>
 
 <script setup lang="ts">
-// Dashboard page - user's personal area
-// Shows balance, profile info, and quick actions
-// Protected route - requires authentication
+// Dashboard page - user's personal area with balance, top-up, and transactions
 
-// Define page meta for authentication requirement
 definePageMeta({
-  middleware: 'auth' // This will be created next
+  middleware: 'auth'
 })
 
-// Use auth composable to access user data and logout
+// Use composables
 const { user, logout } = useAuth()
-
-// Router for navigation after logout
+const { topUp, getTransactions } = usePoints()
 const router = useRouter()
 
+// Top-up form state
+const topupAmount = ref<number | null>(null)
+const isTopupLoading = ref(false)
+const topupError = ref('')
+const topupSuccess = ref('')
+
+// Transactions state
+const transactions = ref<any[]>([])
+const isLoadingTransactions = ref(false)
+
+// Load transactions on mount
+onMounted(async () => {
+  await loadTransactions()
+})
+
 /**
- * Format ISO date string to readable format
+ * Load user's transaction history
  */
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
+const loadTransactions = async () => {
+  isLoadingTransactions.value = true
+  const result = await getTransactions(1, 10) // First 10 transactions
+
+  if (result.success && result.data) {
+    transactions.value = result.data.transactions
+  }
+
+  isLoadingTransactions.value = false
 }
 
 /**
- * Handle logout button click
- * Clears auth and redirects to login
+ * Handle points top-up
+ */
+const handleTopUp = async () => {
+  if (!topupAmount.value || topupAmount.value <= 0) return
+
+  topupError.value = ''
+  topupSuccess.value = ''
+  isTopupLoading.value = true
+
+  const result = await topUp(topupAmount.value)
+
+  if (result.success) {
+    topupSuccess.value = `Successfully added ${topupAmount.value} points!`
+    topupAmount.value = null
+
+    // Reload transactions to show new top-up
+    await loadTransactions()
+
+    // Clear success message after 3 seconds
+    setTimeout(() => {
+      topupSuccess.value = ''
+    }, 3000)
+  } else {
+    topupError.value = result.error || 'Failed to add points'
+  }
+
+  isTopupLoading.value = false
+}
+
+/**
+ * Handle logout
  */
 const handleLogout = async () => {
   await logout()
   await router.push('/login')
+}
+
+/**
+ * Format date string
+ */
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  return date.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+/**
+ * Get transaction type icon
+ */
+const getTransactionIcon = (type: string) => {
+  const icons: Record<string, string> = {
+    TopUp: '💰',
+    Purchase: '🛒',
+    Sale: '💸',
+  }
+  return icons[type] || '•'
+}
+
+/**
+ * Get transaction type label
+ */
+const getTransactionLabel = (type: string) => {
+  const labels: Record<string, string> = {
+    TopUp: 'Points Added',
+    Purchase: 'Recipe Purchased',
+    Sale: 'Recipe Sold',
+  }
+  return labels[type] || type
+}
+
+/**
+ * Get CSS class for transaction type
+ */
+const getTransactionClass = (type: string) => {
+  return `transaction-${type.toLowerCase()}`
+}
+
+/**
+ * Get CSS class for amount (positive/negative)
+ */
+const getAmountClass = (amount: number) => {
+  return amount > 0 ? 'amount-positive' : 'amount-negative'
 }
 </script>
 
@@ -104,7 +250,7 @@ const handleLogout = async () => {
   background: #f5f7fa;
 }
 
-/* Header with title and logout button */
+/* Header */
 .dashboard-header {
   background: white;
   padding: 1.5rem 2rem;
@@ -120,7 +266,6 @@ const handleLogout = async () => {
   color: #333;
 }
 
-/* Logout button */
 .btn-logout {
   padding: 0.5rem 1.5rem;
   background: #dc3545;
@@ -136,15 +281,20 @@ const handleLogout = async () => {
   background: #c82333;
 }
 
-/* Loading state */
-.loading {
+/* Loading states */
+.loading,
+.loading-small {
   text-align: center;
-  padding: 4rem 2rem;
+  padding: 2rem;
   color: #666;
-  font-size: 1.1rem;
 }
 
-/* Main content area */
+.loading-small {
+  padding: 1rem;
+  font-size: 0.9rem;
+}
+
+/* Main content */
 .content {
   max-width: 1200px;
   margin: 0 auto;
@@ -166,19 +316,19 @@ const handleLogout = async () => {
   font-size: 1.5rem;
 }
 
-/* Balance display section */
-.balance-section {
+.card h3 {
+  margin: 2rem 0 1rem 0;
+  color: #333;
+  font-size: 1.2rem;
+}
+
+/* Balance display */
+.balance-display {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 2rem;
   border-radius: 0.75rem;
   text-align: center;
   margin-bottom: 2rem;
-}
-
-.balance-label {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
 }
 
 .balance-amount {
@@ -187,83 +337,216 @@ const handleLogout = async () => {
   font-weight: 700;
 }
 
-/* User information rows */
-.user-info {
+/* Top-up section */
+.topup-section {
+  border-top: 1px solid #e0e0e0;
+  padding-top: 2rem;
+}
+
+.topup-form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.75rem;
-  background: #f8f9fa;
-  border-radius: 0.5rem;
-}
-
-.info-label {
-  color: #666;
-  font-weight: 600;
-}
-
-.info-value {
-  color: #333;
-  font-family: monospace;
-  font-size: 0.9rem;
-}
-
-/* Quick actions section */
-.actions h3 {
-  margin: 0 0 1rem 0;
-  color: #333;
-}
-
-.action-buttons {
+.amount-buttons {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-}
-
-/* Action button */
-.btn-action {
-  padding: 1.5rem;
-  background: white;
-  border: 2px solid #e0e0e0;
-  border-radius: 0.75rem;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  grid-template-columns: repeat(4, 1fr);
   gap: 0.5rem;
 }
 
-.btn-action:not(:disabled):hover {
+.amount-btn {
+  padding: 0.75rem;
+  background: #f5f5f5;
+  border: 2px solid #e0e0e0;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.amount-btn:hover {
+  background: #e8e8e8;
+}
+
+.amount-btn.active {
+  background: #667eea;
+  color: white;
   border-color: #667eea;
+}
+
+.custom-amount input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.custom-amount input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.btn-primary {
+  padding: 0.875rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
 }
 
-.btn-action:disabled {
-  cursor: not-allowed;
+.btn-primary:disabled {
   opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.btn-action small {
+/* Messages */
+.error-message {
+  background: #fee;
+  color: #c33;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid #fcc;
+}
+
+.success-message {
+  background: #efe;
+  color: #2a2;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid #cfc;
+}
+
+/* Quick links */
+.quick-links {
+  margin-bottom: 2rem;
+}
+
+.link-card {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: white;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-decoration: none;
+  transition: transform 0.2s;
+}
+
+.link-card:hover {
+  transform: translateY(-2px);
+}
+
+.link-icon {
+  font-size: 3rem;
+}
+
+.link-text h3 {
+  margin: 0 0 0.25rem 0;
+  color: #333;
+}
+
+.link-text p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* Transactions */
+.transactions-card h3 {
+  margin-top: 0;
+}
+
+.transactions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 0.5rem;
+  border-left: 4px solid #ddd;
+}
+
+.transaction-topup {
+  border-left-color: #28a745;
+}
+
+.transaction-purchase {
+  border-left-color: #dc3545;
+}
+
+.transaction-sale {
+  border-left-color: #ffc107;
+}
+
+.transaction-main {
+  flex: 1;
+}
+
+.transaction-type {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+
+.transaction-recipe {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.transaction-details {
+  text-align: right;
+}
+
+.transaction-amount {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.amount-positive {
+  color: #28a745;
+}
+
+.amount-negative {
+  color: #dc3545;
+}
+
+.transaction-date {
+  font-size: 0.85rem;
   color: #999;
-  font-size: 0.75rem;
-  font-weight: normal;
 }
 
-/* Responsive design */
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: #999;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
   .dashboard-header {
     flex-direction: column;
     gap: 1rem;
-    text-align: center;
   }
 
   .content {
@@ -274,8 +557,21 @@ const handleLogout = async () => {
     font-size: 2rem;
   }
 
-  .action-buttons {
-    grid-template-columns: 1fr;
+  .amount-buttons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .transaction-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .transaction-details {
+    text-align: left;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
   }
 }
 </style>

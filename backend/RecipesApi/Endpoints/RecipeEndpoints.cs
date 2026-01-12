@@ -1,6 +1,9 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using RecipesApi.Data;
+using RecipesApi.Models;
 
 namespace RecipesApi.Endpoints;
 
@@ -38,6 +41,13 @@ public static class RecipeEndpoints
             .WithSummary("Get popular recipes")
             .WithDescription("Returns the top 20 most viewed recipes. Uses memory cache for performance.")
             .CacheOutput(policy => policy.Expire(TimeSpan.FromMinutes(10))); // Cache for 10 minutes
+
+        // POST /api/recipes/{id}/buy - Purchase a recipe with points
+        group.MapPost("/{id:guid}/buy", BuyRecipeAsync)
+            .WithName("BuyRecipe")
+            .WithSummary("Purchase a recipe")
+            .WithDescription("Purchase a recipe using points. Requires sufficient balance.")
+            .RequireAuthorization(); // Requires authentication
     }
 
     /// <summary>
@@ -176,5 +186,128 @@ public static class RecipeEndpoints
         });
 
         return Results.Ok(new { recipes = popularRecipes });
+    }
+
+    /// <summary>
+    /// Purchase a recipe with points
+    /// Validates balance, creates transaction, and transfers points to recipe author
+    /// </summary>
+    private static async Task<IResult> BuyRecipeAsync(
+        Guid id,
+        ClaimsPrincipal user,
+        AppDbContext db)
+    {
+        // Get authenticated user ID from JWT claims
+        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        // Start a database transaction to ensure data consistency
+        // If any step fails, all changes will be rolled back
+        using var transaction = await db.Database.BeginTransactionAsync();
+
+        try
+        {
+            // Find the recipe to purchase
+            var recipe = await db.Recipes
+                .Include(r => r.Author) // Load author to credit them
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (recipe == null)
+            {
+                return Results.NotFound(new { error = "Recipe not found" });
+            }
+
+            // Find the buyer
+            var buyer = await db.Users.FindAsync(userId);
+            if (buyer == null)
+            {
+                return Results.NotFound(new { error = "User not found" });
+            }
+
+            // Check if user is trying to buy their own recipe
+            if (recipe.AuthorId == userId)
+            {
+                return Results.BadRequest(new { error = "You cannot buy your own recipe" });
+            }
+
+            // Check if user has sufficient balance
+            if (buyer.Balance < recipe.Price)
+            {
+                return Results.BadRequest(new
+                {
+                    error = "Insufficient balance",
+                    required = recipe.Price,
+                    current = buyer.Balance,
+                    needed = recipe.Price - buyer.Balance
+                });
+            }
+
+            // Deduct points from buyer's balance
+            buyer.Balance -= recipe.Price;
+
+            // Create purchase transaction for buyer (negative amount)
+            var purchaseTransaction = new Transaction
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Amount = -recipe.Price, // Negative for debit
+                Type = TransactionType.Purchase,
+                RecipeId = recipe.Id,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            db.Transactions.Add(purchaseTransaction);
+
+            // Credit points to recipe author (if author still exists)
+            if (recipe.Author != null)
+            {
+                recipe.Author.Balance += recipe.Price;
+
+                // Create sale transaction for author (positive amount)
+                var saleTransaction = new Transaction
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = recipe.AuthorId,
+                    Amount = recipe.Price, // Positive for credit
+                    Type = TransactionType.Sale,
+                    RecipeId = recipe.Id,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                db.Transactions.Add(saleTransaction);
+            }
+
+            // Save all changes
+            await db.SaveChangesAsync();
+
+            // Commit the transaction - all changes are now permanent
+            await transaction.CommitAsync();
+
+            return Results.Ok(new
+            {
+                message = "Recipe purchased successfully",
+                recipe = new
+                {
+                    id = recipe.Id,
+                    title = recipe.Title,
+                    price = recipe.Price
+                },
+                newBalance = buyer.Balance,
+                transactionId = purchaseTransaction.Id
+            });
+        }
+        catch (Exception ex)
+        {
+            // Rollback transaction on any error
+            await transaction.RollbackAsync();
+            return Results.Problem(
+                title: "Purchase failed",
+                detail: ex.Message,
+                statusCode: 500
+            );
+        }
     }
 }
