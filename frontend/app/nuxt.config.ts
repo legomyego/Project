@@ -8,6 +8,13 @@ export default defineNuxtConfig({
   // Enable Nuxt DevTools for better DX
   devtools: { enabled: true },
 
+  // Development server configuration
+  // Listen on all network interfaces (0.0.0.0) to allow access from other devices
+  devServer: {
+    host: '0.0.0.0', // Listen on all interfaces (accessible via IP address)
+    port: 3000,
+  },
+
   // TypeScript configuration
   typescript: {
     strict: true,
