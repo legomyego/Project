@@ -443,11 +443,127 @@ Frontend:
 **Running**: http://localhost:5173 (admin panel)
 **Result**: ✅ Full-featured admin panel — manage subscriptions, assign recipes, edit/delete recipes, seamless integration with main app
 
-### Phase 6: Integration & Deploy (1 week)
-- [ ] Nginx config (reverse proxy)
-- [ ] Docker images for all services
-- [ ] CI/CD (GitHub Actions)
-- [ ] Deploy to VPS / Railway / Fly.io
+### Phase 8: Deployment & Production ✅ COMPLETE
+**Goal**: Containerize application and prepare for production deployment
+
+**Docker Configuration:**
+- [x] Backend Dockerfile (.NET 9 API)
+  - Multi-stage build (build → publish → runtime)
+  - Optimized with smaller aspnet runtime image
+  - Exposes port 5010
+- [x] Frontend App Dockerfile (Nuxt 3)
+  - Multi-stage build with Node 20 Alpine
+  - Standalone server output
+  - Exposes port 3000
+- [x] Frontend Admin Dockerfile (React)
+  - Multi-stage build → nginx serving
+  - Custom nginx config for SPA routing
+  - Exposes port 80
+- [x] .dockerignore for all services
+
+**Nginx Reverse Proxy:**
+- [x] Main nginx configuration
+  - Routes `/api/*` → .NET backend
+  - Routes `/admin/*` → React admin panel
+  - Routes `/*` → Nuxt main app
+  - Gzip compression enabled
+  - Security headers configured
+  - Health check endpoints
+
+**Docker Compose:**
+- [x] Complete orchestration for all services
+  - PostgreSQL database with health checks
+  - .NET API with JWT configuration
+  - Nuxt app with environment variables
+  - React admin panel
+  - Nginx reverse proxy
+- [x] Named volumes for data persistence
+- [x] Custom network for service communication
+- [x] Auto-restart policies
+
+**CI/CD Pipeline:**
+- [x] GitHub Actions workflow
+  - Separate jobs for backend, frontend app, admin
+  - Automated testing (lint, build, test)
+  - Docker image building and pushing to GHCR
+  - Cache optimization for faster builds
+  - Deploy job (template for VPS/cloud)
+- [x] Multi-architecture support ready
+
+**Configuration Management:**
+- [x] Environment variables (.env.example)
+  - Database credentials
+  - JWT secret configuration
+  - Service ports
+- [x] Production-ready settings
+  - CORS configuration
+  - Connection strings
+  - Security best practices
+
+**Deployment Options:**
+
+1. **Docker Compose (recommended for VPS)**
+   ```bash
+   # Clone repository
+   git clone <your-repo>
+   cd recipes-app
+
+   # Copy and configure environment
+   cp .env.example .env
+   nano .env  # Set JWT_SECRET and passwords
+
+   # Build and start all services
+   docker-compose up -d
+
+   # Access application
+   # Main app: http://localhost
+   # Admin panel: http://localhost/admin
+   # API: http://localhost/api
+   ```
+
+2. **Manual Build**
+   ```bash
+   # Build images
+   docker build -t recipes-api ./backend/RecipesApi
+   docker build -t recipes-app ./frontend/app
+   docker build -t recipes-admin ./frontend/admin
+
+   # Run with custom configuration
+   docker run -d -p 5010:5010 recipes-api
+   docker run -d -p 3000:3000 recipes-app
+   docker run -d -p 5173:80 recipes-admin
+   ```
+
+3. **Cloud Platforms**
+   - Railway: `railway up` (auto-detects Dockerfile)
+   - Fly.io: `fly deploy`
+   - AWS ECS/Fargate: Use GitHub Actions with AWS credentials
+   - Azure Container Apps: Push to ACR and deploy
+   - GCP Cloud Run: Push to GCR and deploy
+
+**Production Checklist:**
+- [x] Docker images optimized
+- [x] Multi-stage builds for smaller images
+- [x] Health checks configured
+- [x] Logging configured
+- [x] Environment variables externalized
+- [ ] SSL/TLS certificates (add nginx SSL config)
+- [ ] Database backups (configure pg_dump cron)
+- [ ] Monitoring (add Prometheus/Grafana)
+- [ ] CDN for static assets (optional)
+
+**Files Created:**
+- `backend/RecipesApi/Dockerfile`
+- `frontend/app/Dockerfile`
+- `frontend/admin/Dockerfile`
+- `frontend/admin/nginx.conf`
+- `nginx/nginx.conf` (main reverse proxy)
+- `docker-compose.yml` (full stack)
+- `.env.example`
+- `.dockerignore`
+- `.github/workflows/ci.yml`
+
+**Result**: ✅ Production-ready containerized application with CI/CD pipeline, ready to deploy to any platform
 
 ## IDE & Tools
 

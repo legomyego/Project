@@ -1,213 +1,333 @@
-# Recipe PWA - Points Economy Application
+# Recipes PWA - Full-Stack Application
 
-Modern PWA application where users earn, buy, and exchange points to purchase recipes. Built with .NET 9, Vue 3/Nuxt 3, and React microfrontend architecture.
+Progressive Web App for buying, selling, and trading recipes with points economy and subscription system.
 
-## Tech Stack
+## 🚀 Quick Start
 
-### Backend
-- **.NET 9** with Minimal APIs
-- **Entity Framework Core 9** with PostgreSQL
-- **JWT Authentication** (httpOnly cookies)
-- Memory caching + Output caching
+### Prerequisites
+- [Docker](https://www.docker.com/get-started) and Docker Compose
+- OR: [.NET 9](https://dotnet.microsoft.com/download), [Node.js 20+](https://nodejs.org/), [PostgreSQL 16](https://www.postgresql.org/download/)
 
-### Frontend - Main App
-- **Nuxt 3 + Vue 3** with TypeScript
-- **PWA** support via `@vite-pwa/nuxt`
-- Service Worker for offline capabilities
-
-### Frontend - Admin Panel
-- **React 18 + Vite** with TypeScript
-- **shadcn/ui** components
-- **TanStack Query** for data fetching
-- **TanStack Table** for data tables
-- **React Hook Form** for forms
-
-## Prerequisites
-
-- **.NET 9 SDK** - [Download](https://dotnet.microsoft.com/download/dotnet/9.0)
-- **Node.js 20+** - [Download](https://nodejs.org/)
-- **Docker Desktop** - [Download](https://www.docker.com/products/docker-desktop/)
-
-## Project Structure
-
-```
-/
-├── backend/
-│   └── RecipesApi/          # .NET 9 API
-├── frontend/
-│   ├── app/                 # Nuxt 3 main application
-│   └── admin/               # React admin panel
-├── docker-compose.yml       # PostgreSQL setup
-└── CLAUDE.md               # Detailed project documentation
-```
-
-## Getting Started
-
-### 1. Start Database
+### Option 1: Docker (Recommended)
 
 ```bash
-# Start PostgreSQL container
+# Clone the repository
+git clone <your-repo-url>
+cd recipes-app
+
+# Copy environment file and configure
+cp .env.example .env
+# Edit .env and set JWT_SECRET and passwords
+
+# Start all services
 docker-compose up -d
 
-# Verify container is running
-docker ps
+# View logs
+docker-compose logs -f
+
+# Access the application
+# Main app: http://localhost
+# Admin panel: http://localhost/admin
+# API: http://localhost/api
+# API Swagger: http://localhost:5010/swagger
 ```
 
-### 2. Run Backend API
+### Option 2: Manual Development Setup
 
+**1. Start PostgreSQL**
+```bash
+docker-compose up -d db
+# Or use local PostgreSQL installation
+```
+
+**2. Backend (.NET API)**
 ```bash
 cd backend/RecipesApi
-dotnet restore
-dotnet run
 
-# API will be available at:
-# http://localhost:5000
-# Swagger UI: http://localhost:5000/swagger
+# Update connection string in appsettings.Development.json
+dotnet ef database update  # Apply migrations
+dotnet run                 # Starts on http://localhost:5010
 ```
 
-### 3. Run Nuxt App (Main Frontend)
-
+**3. Frontend App (Nuxt)**
 ```bash
 cd frontend/app
 npm install
-npm run dev
-
-# App will be available at:
-# http://localhost:3000
+npm run dev  # Starts on http://localhost:3000
 ```
 
-### 4. Run React Admin Panel
-
+**4. Frontend Admin (React)**
 ```bash
 cd frontend/admin
 npm install
-npm run dev
-
-# Admin panel will be available at:
-# http://localhost:5173
+npm run dev  # Starts on http://localhost:5173
 ```
 
-## Database Connection
+## 📚 Tech Stack
 
-**Connection String (Development):**
+### Backend
+- **.NET 9** - Minimal APIs
+- **Entity Framework Core 9** - ORM
+- **PostgreSQL 16** - Database
+- **JWT Authentication** - Security
+
+### Frontend - Main App
+- **Vue 3 + Nuxt 3** - Framework
+- **TypeScript** - Type safety
+- **PWA** - Installable, offline-capable
+- **Tailwind CSS** - Styling
+
+### Frontend - Admin Panel
+- **React 19 + Vite** - Framework
+- **TypeScript** - Type safety
+- **shadcn/ui** - UI components
+- **TanStack Table & Query** - Data management
+- **React Hook Form** - Form handling
+
+### Infrastructure
+- **Docker** - Containerization
+- **Nginx** - Reverse proxy
+- **GitHub Actions** - CI/CD
+
+## 🏗️ Architecture
+
 ```
-Host=localhost;Port=5432;Database=recipes_db;Username=recipes_user;Password=dev_password
+┌─────────────────────────────────────────────────┐
+│              Nginx Reverse Proxy                │
+│  http://localhost                               │
+└────────┬──────────────┬──────────────┬──────────┘
+         │              │              │
+    /api/*         /admin/*          /*
+         │              │              │
+    ┌────▼────┐    ┌────▼────┐   ┌────▼────┐
+    │ .NET 9  │    │  React  │   │  Nuxt 3 │
+    │   API   │    │  Admin  │   │   App   │
+    │  :5010  │    │   :80   │   │  :3000  │
+    └────┬────┘    └─────────┘   └─────────┘
+         │
+    ┌────▼────────┐
+    │ PostgreSQL  │
+    │   :5432     │
+    └─────────────┘
 ```
 
-**Credentials:**
-- Host: `localhost:5432`
-- Database: `recipes_db`
-- User: `recipes_user`
-- Password: `dev_password` ⚠️ Development only!
+## 🔑 Key Features
 
-## Authentication
+### User Features (Main App)
+- ✅ User registration & authentication
+- ✅ Points economy (top-up, purchase, trade)
+- ✅ Recipe catalog with search & pagination
+- ✅ Recipe purchasing with points
+- ✅ Recipe trading between users
+- ✅ Username system
+- ✅ Subscription system (day/3-day/week plans)
+- ✅ PWA support (installable, offline mode)
+- ✅ Personal dashboard with balance & transactions
 
-Authentication uses **JWT tokens stored in httpOnly cookies** for security:
+### Admin Features (Admin Panel)
+- ✅ Admin authentication (IsAdmin flag)
+- ✅ Recipe management (create, edit, delete)
+- ✅ Subscription management (full CRUD)
+- ✅ Recipe assignment to subscriptions
+- ✅ TanStack Table with sorting & pagination
+- ✅ Two-way navigation (admin ↔ main app)
 
-- Tokens are automatically sent with requests
-- Protected against XSS attacks
-- 60-minute expiration (configurable)
-- CORS configured to allow credentials
+### Technical Features
+- ✅ JWT authentication (shared across frontends)
+- ✅ Database transactions for consistency
+- ✅ EF Core migrations
+- ✅ CORS configuration
+- ✅ Docker containerization
+- ✅ Nginx reverse proxy
+- ✅ GitHub Actions CI/CD
+- ✅ Health check endpoints
+- ✅ Gzip compression
+- ✅ Security headers
 
-## API Endpoints
+## 📖 API Documentation
 
 ### Authentication
 - `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login (returns httpOnly cookie)
-- `POST /api/auth/logout` - Logout (clears cookie)
-
-### Users
-- `GET /api/users/me` - Get current user profile + balance
+- `POST /api/auth/login` - Login user
+- `POST /api/auth/logout` - Logout user
+- `GET /api/users/me` - Get current user profile
 
 ### Recipes
-- `GET /api/recipes` - List all recipes
-- `GET /api/recipes/{id}` - Get recipe details
+- `GET /api/recipes` - List all recipes (paginated)
+- `GET /api/recipes/{id}` - Get recipe by ID
+- `GET /api/recipes/popular` - Get popular recipes (cached)
+- `GET /api/recipes/my` - Get owned recipes
+- `POST /api/recipes` - Create recipe
+- `PUT /api/recipes/{id}` - Update recipe (admin/author only)
+- `DELETE /api/recipes/{id}` - Delete recipe (admin/author only)
+- `POST /api/recipes/{id}/buy` - Purchase recipe
 
-## Development Workflow
+### Subscriptions
+- `GET /api/subscriptions` - List all subscriptions
+- `GET /api/subscriptions/{id}` - Get subscription details
+- `POST /api/subscriptions` - Create subscription (admin only)
+- `PUT /api/subscriptions/{id}` - Update subscription (admin only)
+- `DELETE /api/subscriptions/{id}` - Deactivate subscription (admin only)
+- `POST /api/subscriptions/{id}/buy` - Purchase subscription
+- `GET /api/subscriptions/my` - Get active subscriptions
+- `POST /api/subscriptions/{id}/recipes` - Add recipes (admin only)
+- `DELETE /api/subscriptions/{id}/recipes/{recipeId}` - Remove recipe (admin only)
+
+### Points & Transactions
+- `POST /api/points/topup` - Add points to balance
+- `GET /api/points/transactions` - Get transaction history
+
+### Trading
+- `POST /api/trades/offer` - Create trade offer
+- `GET /api/trades/incoming` - Get incoming offers
+- `GET /api/trades/outgoing` - Get outgoing offers
+- `POST /api/trades/{id}/accept` - Accept trade
+- `POST /api/trades/{id}/decline` - Decline trade
+- `POST /api/trades/{id}/cancel` - Cancel trade
+
+### Users
+- `GET /api/users/search?username={username}` - Search users by username
+
+**Swagger UI**: http://localhost:5010/swagger (development mode)
+
+## 🛠️ Development
 
 ### Database Migrations
 
-Migrations are applied **automatically** when the API starts. To create new migrations:
-
 ```bash
 cd backend/RecipesApi
+
+# Create new migration
 dotnet ef migrations add MigrationName
-# Restart API to apply
+
+# Apply migrations
+dotnet ef database update
+
+# Rollback migration
+dotnet ef database update PreviousMigrationName
+
+# Remove last migration (if not applied)
+dotnet ef migrations remove
 ```
 
-### Code Style
-
-- Detailed **English comments** explaining what code does and why
-- Follow conventions in [CLAUDE.md](./CLAUDE.md)
-
-## Environment Variables
-
-### Backend
-Configure in `backend/RecipesApi/appsettings.Development.json` (not committed):
-
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Port=5432;Database=recipes_db;Username=recipes_user;Password=dev_password"
-  },
-  "JwtSettings": {
-    "SecretKey": "your-secret-key-here-min-32-characters",
-    "Issuer": "RecipesAPI",
-    "ExpirationMinutes": 60
-  }
-}
-```
-
-### Nuxt App
-Create `frontend/app/.env.development`:
-
-```env
-NUXT_PUBLIC_API_BASE_URL=http://localhost:5000
-```
-
-### React Admin
-Create `frontend/admin/.env.development.local`:
-
-```env
-VITE_API_BASE_URL=http://localhost:5000
-```
-
-## Troubleshooting
-
-### PostgreSQL Connection Failed
+### Building for Production
 
 ```bash
-# Check if container is running
-docker ps
+# Build all Docker images
+docker-compose build
 
-# View container logs
-docker logs recipes-postgres
+# Build specific service
+docker-compose build api
+docker-compose build app
+docker-compose build admin
 
-# Restart container
-docker-compose restart postgres
+# Push to container registry (GitHub Container Registry)
+docker tag recipes-api ghcr.io/username/recipes-api:latest
+docker push ghcr.io/username/recipes-api:latest
 ```
 
-### .NET Build Errors
+### Running Tests
 
 ```bash
-# Clean and restore
-dotnet clean
-dotnet restore
-dotnet build
+# Backend tests
+cd backend/RecipesApi
+dotnet test
+
+# Frontend App tests
+cd frontend/app
+npm test
+
+# Frontend Admin tests
+cd frontend/admin
+npm test
 ```
 
-### Node.js Module Errors
+## 🚢 Deployment
+
+### VPS Deployment (Docker Compose)
 
 ```bash
-# Clear cache and reinstall
-rm -rf node_modules package-lock.json
-npm install
+# On your server
+git clone <repo>
+cd recipes-app
+
+# Configure environment
+cp .env.example .env
+nano .env  # Set production secrets
+
+# Start services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Update application
+git pull
+docker-compose build
+docker-compose up -d
 ```
 
-## Project Documentation
+### Cloud Platforms
 
-For detailed architecture, phases, and learning goals, see [CLAUDE.md](./CLAUDE.md).
+**Railway**
+```bash
+railway up
+```
 
-## License
+**Fly.io**
+```bash
+fly deploy
+```
 
-MIT
+**Manual Docker Registry**
+```bash
+# Tag images
+docker tag recipes-api your-registry/recipes-api:latest
+
+# Push to registry
+docker push your-registry/recipes-api:latest
+
+# Pull and run on server
+docker pull your-registry/recipes-api:latest
+docker run -d -p 5010:5010 your-registry/recipes-api:latest
+```
+
+## 🔒 Security
+
+- **JWT Authentication**: HTTP-only cookies for security
+- **Password Hashing**: BCrypt with salt
+- **SQL Injection**: Parameterized queries via EF Core
+- **XSS Protection**: Security headers configured
+- **CORS**: Configured for specific origins
+- **Rate Limiting**: TODO - Phase 5
+- **HTTPS**: Configure nginx SSL in production
+
+## 📝 Environment Variables
+
+See [.env.example](.env.example) for all available options.
+
+**Critical for Production:**
+- `JWT_SECRET` - Generate with `openssl rand -base64 64`
+- `POSTGRES_PASSWORD` - Strong database password
+- API URLs should point to production domain
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
+
+## 📄 License
+
+This project is for educational purposes.
+
+## 📞 Support
+
+For questions or issues, please open an issue on GitHub.
+
+---
+
+**Powered by**: .NET 9, Vue 3, React 19, PostgreSQL, Docker
+**Built with**: Claude Code ❤️

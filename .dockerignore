@@ -1,0 +1,63 @@
+# .dockerignore - files to exclude from Docker build context
+# Reduces build context size and speeds up builds
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+LICENSE
+
+# Node modules (will be installed during build)
+**/node_modules
+**/npm-debug.log
+**/.npm
+
+# .NET build outputs (will be built during Docker build)
+**/bin
+**/obj
+**/*.user
+**/*.suo
+**/*.userprefs
+
+# IDE and editor files
+.vs
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files (use docker-compose environment instead)
+.env
+.env.local
+.env.*.local
+
+# Logs
+**/logs
+**/*.log
+
+# Build outputs
+**/dist
+**/build
+**/.output
+**/.nuxt
+**/.next
+
+# Test coverage
+**/coverage
+
+# Temporary files
+**/tmp
+**/temp
+
+# Docker files
+Dockerfile
+docker-compose*.yml
+.dockerignore
