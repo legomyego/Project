@@ -42,7 +42,7 @@ public static class AnalyticsEndpoints
         // Calculate total revenue (sum of all Purchase transactions)
         var totalRevenueTask = db.Transactions
             .Where(t => t.Type == Models.TransactionType.Purchase)
-            .SumAsync(t => (decimal?)t.Amount) ?? 0m;
+            .SumAsync(t => (decimal?)t.Amount);
 
         // Get recent transactions (last 10)
         var recentTransactionsTask = db.Transactions
@@ -102,7 +102,7 @@ public static class AnalyticsEndpoints
                 totalRecipes = await totalRecipesTask,
                 totalTransactions = await totalTransactionsTask,
                 activeSubscriptions = await activeSubscriptionsTask,
-                totalRevenue = Math.Abs(await totalRevenueTask) // Absolute value since purchases are negative
+                totalRevenue = Math.Abs(await totalRevenueTask ?? 0m) // Absolute value since purchases are negative
             },
             recentTransactions = await recentTransactionsTask,
             topRecipes = await topRecipesTask,
