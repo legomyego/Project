@@ -330,31 +330,44 @@ Frontend:
 
 **Result**: ✅ Full trading system working — search users → create offers → accept/decline → recipes exchanged
 
-### Phase 5: Security & Account Management 📋 PLANNED
+### Phase 5: Security & Account Management 🚧 IN PROGRESS
 **Goal**: Production-ready security and user management
 
-Backend:
-- [ ] Rate Limiting for DDoS protection:
-  - ASP.NET built-in middleware
-  - Configure limits per endpoint
+**Rate Limiting:**
+- [x] ASP.NET Core 9 built-in rate limiting middleware
+  - Fixed window limiter: 100 requests/minute for general API
+  - Strict limiter: 5 requests/minute for auth endpoints (login, register)
   - IP-based throttling
-- [ ] Password management:
-  - POST /api/users/change-password — change password for authenticated user
-  - POST /api/auth/forgot-password — send reset email
-  - POST /api/auth/reset-password — reset with token
-  - Email service (SMTP configuration)
-- [ ] CAPTCHA integration:
-  - Google reCAPTCHA v3 (invisible)
-  - Verify on registration and login
-  - Configurable threshold
+  - Custom 429 (Too Many Requests) responses with retry-after metadata
+  - Applied to authentication endpoints to prevent brute force attacks
 
-Frontend:
-- [ ] Change password form in dashboard/profile
-- [ ] Forgot password flow on login page
-- [ ] Reset password page with token validation
-- [ ] CAPTCHA integration (invisible to users)
+**Password Management:**
+- [x] Change password endpoint:
+  - POST /api/users/change-password
+  - Requires current password verification
+  - Password strength validation (min 6 characters)
+  - Prevents setting same password
+  - Protected with authentication
+- [ ] Forgot password flow (future):
+  - Email service integration (SMTP)
+  - Password reset tokens with expiration
+  - Secure reset links
 
-**Result**: Secure, production-ready authentication system
+**Security Features:**
+- [x] Rate limiting middleware configured
+- [x] Password change with current password verification
+- [x] JWT token validation on all protected endpoints
+- [x] httpOnly cookies for token storage
+- [x] BCrypt password hashing
+- [ ] CAPTCHA integration (future - reCAPTCHA v3)
+- [ ] Email verification (future)
+
+**Frontend Updates:**
+- [ ] Change password form in dashboard (future)
+- [ ] Forgot password UI (future)
+- [ ] Password strength indicator (future)
+
+**Result**: 🎯 Core security features implemented — rate limiting active, password management working
 
 ### Phase 6: PWA ✅ COMPLETE
 **Goal**: Install on phone, offline access

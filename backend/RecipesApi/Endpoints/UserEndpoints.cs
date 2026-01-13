@@ -1,7 +1,9 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RecipesApi.Data;
+using RecipesApi.Services;
 
 namespace RecipesApi.Endpoints;
 
@@ -34,6 +36,14 @@ public static class UserEndpoints
             .WithName("SearchUserByUsername")
             .WithSummary("Search user by username")
             .WithDescription("Find a user by username and get their owned recipes for trading.")
+            .RequireAuthorization();
+
+        // POST /api/users/change-password - Change user's password
+        // Requires authentication and current password verification
+        group.MapPost("/change-password", ChangePasswordAsync)
+            .WithName("ChangePassword")
+            .WithSummary("Change user password")
+            .WithDescription("Change the current user's password. Requires current password for verification.")
             .RequireAuthorization();
     }
 
@@ -145,6 +155,81 @@ public static class UserEndpoints
                 username = targetUser.Username
             },
             recipes = userRecipes
+        });
+    }
+
+    /// <summary>
+    /// Request model for changing password
+    /// Contains current password for verification and new password
+    /// </summary>
+    public record ChangePasswordRequest(
+        string CurrentPassword,
+        string NewPassword
+    );
+
+    /// <summary>
+    /// Change the current user's password
+    /// Verifies current password before allowing change
+    /// This prevents unauthorized password changes if someone gains session access
+    /// </summary>
+    private static async Task<IResult> ChangePasswordAsync(
+        [FromBody] ChangePasswordRequest request,
+        ClaimsPrincipal user,
+        AppDbContext db,
+        PasswordHashService passwordHasher)
+    {
+        // Get current user ID from JWT claims
+        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        // Validate input
+        if (string.IsNullOrWhiteSpace(request.CurrentPassword))
+        {
+            return Results.BadRequest(new { error = "Current password is required" });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            return Results.BadRequest(new { error = "New password is required" });
+        }
+
+        // Password strength validation
+        if (request.NewPassword.Length < 6)
+        {
+            return Results.BadRequest(new { error = "New password must be at least 6 characters long" });
+        }
+
+        // Find user in database
+        var currentUser = await db.Users.FindAsync(userId);
+        if (currentUser == null)
+        {
+            return Results.NotFound(new { error = "User not found" });
+        }
+
+        // Verify current password
+        // This is critical for security - ensures the user knows the current password
+        if (!passwordHasher.VerifyPassword(request.CurrentPassword, currentUser.PasswordHash))
+        {
+            return Results.BadRequest(new { error = "Current password is incorrect" });
+        }
+
+        // Don't allow setting the same password
+        if (passwordHasher.VerifyPassword(request.NewPassword, currentUser.PasswordHash))
+        {
+            return Results.BadRequest(new { error = "New password must be different from current password" });
+        }
+
+        // Hash and save new password
+        currentUser.PasswordHash = passwordHasher.HashPassword(request.NewPassword);
+        await db.SaveChangesAsync();
+
+        return Results.Ok(new
+        {
+            message = "Password changed successfully",
+            timestamp = DateTime.UtcNow
         });
     }
 }

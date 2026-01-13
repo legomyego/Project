@@ -25,13 +25,15 @@ public static class AuthEndpoints
         group.MapPost("/register", RegisterAsync)
             .WithName("Register")
             .WithSummary("Register a new user account")
-            .WithDescription("Creates a new user account with email and password. Returns a JWT token in an httpOnly cookie.");
+            .WithDescription("Creates a new user account with email and password. Returns a JWT token in an httpOnly cookie.")
+            .RequireRateLimiting("auth"); // Strict rate limit: 5 requests per minute
 
         // POST /api/auth/login - Authenticate existing user
         group.MapPost("/login", LoginAsync)
             .WithName("Login")
             .WithSummary("Login with email and password")
-            .WithDescription("Authenticates a user and returns a JWT token in an httpOnly cookie.");
+            .WithDescription("Authenticates a user and returns a JWT token in an httpOnly cookie.")
+            .RequireRateLimiting("auth"); // Strict rate limit: 5 requests per minute
 
         // POST /api/auth/logout - Clear authentication cookie
         group.MapPost("/logout", LogoutAsync)

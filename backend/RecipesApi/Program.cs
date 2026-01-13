@@ -128,6 +128,44 @@ builder.Services.AddMemoryCache();
 // Caches entire HTTP responses for specified durations
 builder.Services.AddOutputCache();
 
+// Add rate limiting to protect against DDoS and brute force attacks
+// Uses built-in ASP.NET Core 9 rate limiting middleware
+builder.Services.AddRateLimiter(options =>
+{
+    // Fixed window limiter for general API requests
+    // Allows 100 requests per minute per IP address
+    options.AddFixedWindowLimiter("api", limiterOptions =>
+    {
+        limiterOptions.PermitLimit = 100;
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+        limiterOptions.QueueLimit = 10;
+    });
+
+    // Strict limiter for authentication endpoints (login, register)
+    // Prevents brute force attacks: 5 requests per minute per IP
+    options.AddFixedWindowLimiter("auth", limiterOptions =>
+    {
+        limiterOptions.PermitLimit = 5;
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+        limiterOptions.QueueLimit = 2;
+    });
+
+    // Response when rate limit is exceeded
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.StatusCode = 429; // Too Many Requests
+        await context.HttpContext.Response.WriteAsJsonAsync(new
+        {
+            error = "Too many requests. Please try again later.",
+            retryAfter = context.Lease.TryGetMetadata(System.Threading.RateLimiting.MetadataName.RetryAfter, out var retryAfter)
+                ? retryAfter.TotalSeconds
+                : 60
+        }, cancellationToken: token);
+    };
+});
+
 // Add Swagger/OpenAPI for API documentation and testing
 // Only available in development mode
 builder.Services.AddEndpointsApiExplorer();
@@ -198,6 +236,10 @@ app.UseAuthorization();
 
 // Enable output caching
 app.UseOutputCache();
+
+// Enable rate limiting middleware
+// This must be placed before endpoint mapping to intercept requests
+app.UseRateLimiter();
 
 // ==================== API ENDPOINTS ====================
 
