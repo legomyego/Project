@@ -1,5 +1,26 @@
 {
+  "name": "recipes-pwa-monorepo",
+  "version": "1.0.0",
+  "description": "Recipe PWA with points economy - full stack application",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently --names \"API,Nuxt,Admin\" --prefix-colors \"blue,green,yellow\" \"npm run dev:api\" \"npm run dev:app\" \"npm run dev:admin\"",
+    "dev:api": "cd backend/RecipesApi && dotnet watch run",
+    "dev:app": "cd frontend/app && npm run dev",
+    "dev:admin": "cd frontend/admin && npm run dev",
+    "build": "npm run build:api && npm run build:app && npm run build:admin",
+    "build:api": "cd backend/RecipesApi && dotnet build",
+    "build:app": "cd frontend/app && npm run build",
+    "build:admin": "cd frontend/admin && npm run build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:rebuild": "docker-compose up --build -d"
+  },
   "dependencies": {
     "react-router-dom": "^7.12.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }
