@@ -49,20 +49,6 @@ export const useRecipes = () => {
   }
 
   /**
-   * Fetch a single recipe by ID
-   */
-  const getRecipeById = async (id: string) => {
-    try {
-      const response = await $fetch<Recipe>(`${apiBase}/api/recipes/${id}`)
-
-      return { success: true, data: response }
-    } catch (error: any) {
-      const errorMessage = error.data?.error || error.message || 'Failed to fetch recipe'
-      return { success: false, error: errorMessage }
-    }
-  }
-
-  /**
    * Purchase a recipe with points
    * Requires authentication
    */
@@ -94,7 +80,6 @@ export const useRecipes = () => {
 
   return {
     getRecipes,
-    getRecipeById,
     buyRecipe,
   }
 }

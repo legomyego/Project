@@ -4,16 +4,11 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@/contexts/AuthContext'
+import { useLogout } from '@/hooks/useLogout'
 
 export function UsersPage() {
   const navigate = useNavigate()
-  const { logout } = useAuth()
-
-  const handleLogout = async () => {
-    await logout()
-    navigate('/login')
-  }
+  const { handleLogout } = useLogout()
 
   return (
     <div className="min-h-screen bg-slate-50">

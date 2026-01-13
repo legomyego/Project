@@ -35,13 +35,6 @@ public static class RecipeEndpoints
             .WithSummary("Get recipe by ID")
             .WithDescription("Returns detailed information about a specific recipe. Increments view count.");
 
-        // GET /api/recipes/popular - Get most viewed recipes
-        group.MapGet("/popular", GetPopularRecipesAsync)
-            .WithName("GetPopularRecipes")
-            .WithSummary("Get popular recipes")
-            .WithDescription("Returns the top 20 most viewed recipes. Uses memory cache for performance.")
-            .CacheOutput(policy => policy.Expire(TimeSpan.FromMinutes(10))); // Cache for 10 minutes
-
         // GET /api/recipes/my - Get user's owned recipes
         group.MapGet("/my", GetMyRecipesAsync)
             .WithName("GetMyRecipes")
@@ -241,52 +234,6 @@ public static class RecipeEndpoints
                 username = recipe.Author.Username
             }
         });
-    }
-
-    /// <summary>
-    /// Get the most popular recipes based on view count
-    /// Uses IMemoryCache for improved performance
-    /// Cache is invalidated after 10 minutes
-    /// </summary>
-    private static async Task<IResult> GetPopularRecipesAsync(
-        AppDbContext db,
-        IMemoryCache cache)
-    {
-        // Try to get popular recipes from cache first
-        // Cache key is a constant string identifier
-        var cacheKey = "popular_recipes";
-
-        // GetOrCreateAsync: returns cached value if exists, otherwise executes the function
-        var popularRecipes = await cache.GetOrCreateAsync(cacheKey, async entry =>
-        {
-            // Set cache expiration to 10 minutes
-            // After 10 minutes, cache will be refreshed with latest data
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
-
-            // Fetch top 20 recipes by view count
-            return await db.Recipes
-                .Include(r => r.Author)
-                .OrderByDescending(r => r.Views) // Sort by most viewed
-                .Take(20) // Limit to top 20
-                .Select(r => new
-                {
-                    id = r.Id,
-                    title = r.Title,
-                    description = r.Description,
-                    price = r.Price,
-                    views = r.Views,
-                    createdAt = r.CreatedAt,
-                    author = new
-                    {
-                        id = r.Author!.Id,
-                        email = r.Author.Email,
-                        username = r.Author.Username
-                    }
-                })
-                .ToListAsync();
-        });
-
-        return Results.Ok(new { recipes = popularRecipes });
     }
 
     /// <summary>

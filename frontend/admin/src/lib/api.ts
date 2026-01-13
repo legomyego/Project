@@ -66,31 +66,6 @@ export interface RecipesResponse {
   }
 }
 
-// Trades
-export interface Trade {
-  id: string
-  status: string
-  createdAt: string
-  offeringUser: {
-    id: string
-    username: string
-  }
-  offeredRecipe: {
-    id: string
-    title: string
-    price: number
-  }
-  requestedUser: {
-    id: string
-    username: string
-  }
-  requestedRecipe: {
-    id: string
-    title: string
-    price: number
-  }
-}
-
 // Subscriptions
 export interface Subscription {
   id: string
@@ -198,27 +173,6 @@ export const api = {
     },
 
     /**
-     * Get single recipe by ID
-     */
-    getById: async (id: string): Promise<Recipe> => {
-      return apiRequest<Recipe>(`/api/recipes/${id}`)
-    },
-
-    /**
-     * Get popular recipes (cached)
-     */
-    getPopular: async (): Promise<Recipe[]> => {
-      return apiRequest<Recipe[]>('/api/recipes/popular')
-    },
-
-    /**
-     * Get user's owned recipes
-     */
-    getMyRecipes: async (): Promise<{ recipes: any[], pagination: any }> => {
-      return apiRequest('/api/recipes/my')
-    },
-
-    /**
      * Create a new recipe
      */
     create: async (data: { title: string; description: string; price: number }): Promise<Recipe> => {
@@ -249,64 +203,6 @@ export const api = {
     delete: async (id: string): Promise<{ message: string; deletedRecipeId: string }> => {
       return apiRequest(`/api/recipes/${id}`, {
         method: 'DELETE',
-      })
-    },
-  },
-
-  // Trade endpoints
-  trades: {
-    /**
-     * Get incoming trade offers
-     */
-    getIncoming: async (): Promise<Trade[]> => {
-      return apiRequest<Trade[]>('/api/trades/incoming')
-    },
-
-    /**
-     * Get outgoing trade offers
-     */
-    getOutgoing: async (): Promise<Trade[]> => {
-      return apiRequest<Trade[]>('/api/trades/outgoing')
-    },
-
-    /**
-     * Create new trade offer
-     */
-    create: async (offeredRecipeId: string, requestedUserId: string, requestedRecipeId: string) => {
-      return apiRequest('/api/trades/offer', {
-        method: 'POST',
-        body: JSON.stringify({
-          offeredRecipeId,
-          requestedUserId,
-          requestedRecipeId,
-        }),
-      })
-    },
-
-    /**
-     * Accept trade offer
-     */
-    accept: async (tradeId: string) => {
-      return apiRequest(`/api/trades/${tradeId}/accept`, {
-        method: 'POST',
-      })
-    },
-
-    /**
-     * Decline trade offer
-     */
-    decline: async (tradeId: string) => {
-      return apiRequest(`/api/trades/${tradeId}/decline`, {
-        method: 'POST',
-      })
-    },
-
-    /**
-     * Cancel outgoing trade offer
-     */
-    cancel: async (tradeId: string) => {
-      return apiRequest(`/api/trades/${tradeId}/cancel`, {
-        method: 'POST',
       })
     },
   },
@@ -376,23 +272,4 @@ export const api = {
     },
   },
 
-  // Points/Transactions endpoints
-  points: {
-    /**
-     * Top up user points balance
-     */
-    topup: async (amount: number) => {
-      return apiRequest('/api/points/topup', {
-        method: 'POST',
-        body: JSON.stringify({ amount }),
-      })
-    },
-
-    /**
-     * Get transaction history
-     */
-    getTransactions: async (page: number = 1, pageSize: number = 10) => {
-      return apiRequest(`/api/points/transactions?page=${page}&pageSize=${pageSize}`)
-    },
-  },
 }

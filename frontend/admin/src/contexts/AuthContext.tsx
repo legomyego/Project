@@ -15,7 +15,6 @@ interface AuthContextType {
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
-  refreshUser: () => Promise<void>
 }
 
 // Create context with undefined initial value
@@ -124,20 +123,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  /**
-   * Refresh user data
-   * Useful after updating profile or balance
-   */
-  const refreshUser = async () => {
-    try {
-      const userData = await api.auth.getCurrentUser()
-      setUser(userData)
-    } catch (error) {
-      // If refresh fails, user might have been logged out
-      setUser(null)
-    }
-  }
-
   // Provide authentication state and methods to all children
   const value: AuthContextType = {
     user,
@@ -145,7 +130,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated,
     login,
     logout,
-    refreshUser,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

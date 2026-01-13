@@ -74,13 +74,6 @@ public class AppDbContext : DbContext
     public DbSet<SubscriptionRecipe> SubscriptionRecipes => Set<SubscriptionRecipe>();
 
     /// <summary>
-    /// DbSet for PasswordResetTokens table
-    /// Stores password reset tokens for forgot password flow
-    /// Tokens are one-time use with expiration
-    /// </summary>
-    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
-
-    /// <summary>
     /// Configure entity relationships and constraints using Fluent API
     /// This method is called when EF Core creates the model
     /// </summary>
@@ -329,31 +322,6 @@ public class AppDbContext : DbContext
                 .WithMany(r => r.SubscriptionRecipes)
                 .HasForeignKey(sr => sr.RecipeId)
                 .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // Configure PasswordResetToken entity
-        modelBuilder.Entity<PasswordResetToken>(entity =>
-        {
-            // Token must be unique
-            entity.HasIndex(t => t.Token).IsUnique();
-
-            // Token is required
-            entity.Property(t => t.Token)
-                .IsRequired()
-                .HasMaxLength(500);
-
-            // Configure relationship: PasswordResetToken belongs to User
-            // When User is deleted, their reset tokens are also deleted (cascade)
-            entity.HasOne(t => t.User)
-                .WithMany()
-                .HasForeignKey(t => t.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Add index on ExpiresAt for efficient cleanup of expired tokens
-            entity.HasIndex(t => t.ExpiresAt);
-
-            // Add index on UserId for efficient lookup
-            entity.HasIndex(t => t.UserId);
         });
     }
 }
