@@ -48,6 +48,22 @@ PWA application with points economy: users earn, buy, and exchange points to pur
 - **Integration**: reverse proxy (different paths or subdomains)
 - **Shared**: backend API and JWT authentication
 
+## Quick Start
+
+### One-Command Startup (Development)
+
+```bash
+npm run dev
+```
+
+This starts all 3 services in parallel (API, Nuxt, React admin) with live reload.
+
+**Alternative methods:**
+- **Docker:** `docker-compose up -d` (production-ready with nginx)
+- **macOS script:** `./start-dev.sh` (opens separate Terminal tabs)
+
+See [START.md](START.md) for detailed instructions, troubleshooting, and all available commands.
+
 ## Caching Strategy
 
 ### Backend (.NET)
