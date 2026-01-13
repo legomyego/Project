@@ -79,28 +79,62 @@ public static class RecipeEndpoints
     }
 
     /// <summary>
-    /// Get list of all recipes with optional pagination
-    /// Default: returns first 50 recipes ordered by creation date (newest first)
+    /// Get list of all recipes with optional pagination, search, and filters
+    /// Supports search by title/description and filtering by price range
     /// </summary>
     private static async Task<IResult> GetRecipesAsync(
         AppDbContext db,
         int page = 1,
-        int pageSize = 50)
+        int pageSize = 50,
+        string? search = null,
+        decimal? minPrice = null,
+        decimal? maxPrice = null,
+        string? sortBy = "newest")
     {
         // Validate pagination parameters
         if (page < 1) page = 1;
         if (pageSize < 1 || pageSize > 100) pageSize = 50; // Max 100 items per page
 
-        // Calculate total count for pagination metadata
-        var totalCount = await db.Recipes.CountAsync();
+        // Start with base query
+        var query = db.Recipes.Include(r => r.Author).AsQueryable();
+
+        // Apply search filter if provided
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var searchLower = search.ToLower();
+            query = query.Where(r =>
+                r.Title.ToLower().Contains(searchLower) ||
+                r.Description.ToLower().Contains(searchLower));
+        }
+
+        // Apply price filters if provided
+        if (minPrice.HasValue)
+        {
+            query = query.Where(r => r.Price >= minPrice.Value);
+        }
+
+        if (maxPrice.HasValue)
+        {
+            query = query.Where(r => r.Price <= maxPrice.Value);
+        }
+
+        // Apply sorting
+        query = sortBy?.ToLower() switch
+        {
+            "popular" => query.OrderByDescending(r => r.Views),
+            "price_asc" => query.OrderBy(r => r.Price),
+            "price_desc" => query.OrderByDescending(r => r.Price),
+            "title" => query.OrderBy(r => r.Title),
+            _ => query.OrderByDescending(r => r.CreatedAt) // Default: newest first
+        };
+
+        // Calculate total count AFTER filters
+        var totalCount = await query.CountAsync();
 
         // Fetch recipes with pagination
-        // Include author information for each recipe
-        var recipes = await db.Recipes
-            .Include(r => r.Author) // Load author data
-            .OrderByDescending(r => r.CreatedAt) // Newest first
-            .Skip((page - 1) * pageSize) // Skip previous pages
-            .Take(pageSize) // Take only requested page size
+        var recipes = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(r => new
             {
                 id = r.Id,
@@ -109,6 +143,7 @@ public static class RecipeEndpoints
                 price = r.Price,
                 views = r.Views,
                 createdAt = r.CreatedAt,
+                requiresSubscription = r.RequiresSubscription,
                 author = new
                 {
                     id = r.Author!.Id,

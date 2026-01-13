@@ -276,6 +276,7 @@ app.MapRecipeEndpoints();        // Recipes: /api/recipes/*
 app.MapPointsEndpoints();        // Points: /api/points/*
 app.MapTradeEndpoints();         // Trades: /api/trades/*
 app.MapSubscriptionEndpoints();  // Subscriptions: /api/subscriptions/*
+app.MapAnalyticsEndpoints();     // Analytics: /api/analytics/*
 
 // ==================== START APPLICATION ====================
 
