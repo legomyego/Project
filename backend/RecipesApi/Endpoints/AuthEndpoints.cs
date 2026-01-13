@@ -66,6 +66,26 @@ public static class AuthEndpoints
             return Results.Conflict(new { error = "Email already registered" });
         }
 
+        // Check if username is already taken
+        var existingUsername = await db.Users
+            .FirstOrDefaultAsync(u => u.Username == request.Username);
+
+        if (existingUsername != null)
+        {
+            return Results.Conflict(new { error = "Username already taken" });
+        }
+
+        // Validate username (minimum 3 characters, alphanumeric and underscores only)
+        if (request.Username.Length < 3)
+        {
+            return Results.BadRequest(new { error = "Username must be at least 3 characters" });
+        }
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(request.Username, @"^[a-zA-Z0-9_]+$"))
+        {
+            return Results.BadRequest(new { error = "Username can only contain letters, numbers, and underscores" });
+        }
+
         // Validate password strength (minimum 6 characters)
         if (request.Password.Length < 6)
         {
@@ -77,6 +97,7 @@ public static class AuthEndpoints
         {
             Id = Guid.NewGuid(),
             Email = request.Email.ToLowerInvariant().Trim(),
+            Username = request.Username.Trim(),
             PasswordHash = passwordHasher.HashPassword(request.Password),
             Balance = 0, // New users start with 0 balance
             CreatedAt = DateTime.UtcNow
@@ -94,9 +115,10 @@ public static class AuthEndpoints
         // Secure flag will be enabled in production (HTTPS only)
         httpContext.Response.Cookies.Append("auth_token", token, new CookieOptions
         {
-            HttpOnly = true,
+            HttpOnly = false, // Temporarily false for debugging (set true in production)
             Secure = false, // Set to true in production with HTTPS
-            SameSite = SameSiteMode.None, // None allows cross-origin cookie for localhost
+            SameSite = SameSiteMode.Lax, // Lax works for localhost same-site requests
+            Path = "/",
             Expires = DateTimeOffset.UtcNow.AddDays(7) // Cookie expires in 7 days
         });
 
@@ -105,6 +127,7 @@ public static class AuthEndpoints
         {
             id = user.Id,
             email = user.Email,
+            username = user.Username,
             balance = user.Balance,
             createdAt = user.CreatedAt,
             message = "Registration successful"
@@ -152,9 +175,10 @@ public static class AuthEndpoints
         // Set JWT token as httpOnly cookie
         httpContext.Response.Cookies.Append("auth_token", token, new CookieOptions
         {
-            HttpOnly = true,
+            HttpOnly = false, // Temporarily false for debugging (set true in production)
             Secure = false, // Set to true in production with HTTPS
-            SameSite = SameSiteMode.None, // None allows cross-origin cookie for localhost
+            SameSite = SameSiteMode.Lax, // Lax works for localhost same-site requests
+            Path = "/",
             Expires = DateTimeOffset.UtcNow.AddDays(7)
         });
 
@@ -163,6 +187,7 @@ public static class AuthEndpoints
         {
             id = user.Id,
             email = user.Email,
+            username = user.Username,
             balance = user.Balance,
             createdAt = user.CreatedAt,
             message = "Login successful"
@@ -186,7 +211,7 @@ public static class AuthEndpoints
 /// <summary>
 /// Request model for user registration
 /// </summary>
-public record RegisterRequest(string Email, string Password);
+public record RegisterRequest(string Email, string Username, string Password);
 
 /// <summary>
 /// Request model for user login

@@ -6,6 +6,7 @@
 interface User {
   id: string
   email: string
+  username: string
   balance: number
   createdAt: string
 }
@@ -19,6 +20,7 @@ interface LoginRequest {
 // Registration request payload
 interface RegisterRequest {
   email: string
+  username: string
   password: string
 }
 
@@ -26,6 +28,7 @@ interface RegisterRequest {
 interface AuthResponse {
   id: string
   email: string
+  username: string
   balance: number
   createdAt: string
   message: string
@@ -47,7 +50,7 @@ export const useAuth = () => {
    * Register a new user account
    * Creates user and automatically logs them in
    */
-  const register = async (email: string, password: string) => {
+  const register = async (email: string, username: string, password: string) => {
     isLoading.value = true
 
     try {
@@ -55,7 +58,7 @@ export const useAuth = () => {
       // credentials: 'include' ensures cookies are sent/received
       const response = await $fetch<AuthResponse>(`${apiBase}/api/auth/register`, {
         method: 'POST',
-        body: { email, password },
+        body: { email, username, password },
         credentials: 'include', // Important: allows cookies to be set
       })
 
@@ -63,6 +66,7 @@ export const useAuth = () => {
       user.value = {
         id: response.id,
         email: response.email,
+        username: response.username,
         balance: response.balance,
         createdAt: response.createdAt,
       }
@@ -95,6 +99,7 @@ export const useAuth = () => {
       user.value = {
         id: response.id,
         email: response.email,
+        username: response.username,
         balance: response.balance,
         createdAt: response.createdAt,
       }
@@ -142,7 +147,7 @@ export const useAuth = () => {
 
       user.value = response
       return { success: true, user: response }
-    } catch (error) {
+    } catch (error: any) {
       // Token invalid or expired - clear user
       user.value = null
       return { success: false }

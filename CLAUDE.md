@@ -289,37 +289,46 @@ Frontend:
 
 **Result**: ✅ Full purchase flow working — add points → browse → buy → see in history
 
-### Phase 4: Recipe Trading System 🚧 IN PROGRESS
+### Phase 4: Recipe Trading System ✅ COMPLETE
 **Goal**: Users can trade recipes with each other
 
 Backend:
-- [ ] New models:
+- [x] New models:
   - UserRecipe (many-to-many: users own recipes)
   - Trade (id, offeringUserId, offeredRecipeId, requestedUserId, requestedRecipeId, status, createdAt)
-- [ ] Recipe ownership endpoints:
+- [x] Recipe ownership endpoints:
   - GET /api/recipes/my — my purchased/traded recipes
-- [ ] Trade endpoints:
+- [x] Trade endpoints:
   - POST /api/trades/offer — offer a trade
   - GET /api/trades/incoming — incoming trade offers
   - GET /api/trades/outgoing — my trade offers
   - POST /api/trades/{id}/accept — accept trade
   - POST /api/trades/{id}/decline — decline trade
   - POST /api/trades/{id}/cancel — cancel my offer
+- [x] Username system:
+  - Added Username field to User model
+  - Username search endpoint: GET /api/users/search?username={username}
+  - Unique username validation
 
 Frontend:
-- [ ] My Recipes page (/my-recipes):
+- [x] My Recipes page (/my-recipes):
   - List of owned recipes
-  - "Offer Trade" button on each
-- [ ] Trade Offers page (/trades):
+  - "Trade Recipe" button on each
+  - Shows acquisition type (Purchase/Trade)
+- [x] Trade Offers page (/trades):
   - Tabs: Incoming / Outgoing
   - Offer details (who, what recipes, when)
-  - Accept/Decline buttons
-- [ ] Trade offer modal:
-  - Select my recipe to offer
-  - Select their recipe to request
+  - Accept/Decline/Cancel buttons
+  - Status indicators
+- [x] Trade offer modal:
+  - Username search input
+  - Search for trading partners
+  - Select recipe to request
   - Confirm trade offer
+- [x] Registration with username
+- [x] Username displayed throughout UI
 
-**Result**: Users can exchange recipes without spending points
+**Result**: ✅ Full trading system working — search users → create offers → accept/decline → recipes exchanged
 
 ### Phase 5: Security & Account Management 📋 PLANNED
 **Goal**: Production-ready security and user management
@@ -347,16 +356,19 @@ Frontend:
 
 **Result**: Secure, production-ready authentication system
 
-### Phase 6: PWA (3-5 days)
+### Phase 6: PWA ✅ COMPLETE
 **Goal**: Install on phone, offline access
 
-- [ ] Connect @vite-pwa/nuxt
-- [ ] Manifest (icons, name, colors)
-- [ ] Service Worker — static caching
-- [ ] Offline page
-- [ ] Cache purchased recipes for offline viewing
+- [x] Connect @vite-pwa/nuxt
+- [x] Manifest (icons, name, colors)
+- [x] Service Worker — static caching with Workbox
+- [x] Offline page with auto-reconnect detection
+- [x] API response caching (network-first strategy)
+- [x] Image caching (cache-first strategy)
+- [x] App icons (192x192, 512x512)
+- [x] Development mode PWA enabled
 
-**Result**: App installable, recipes available offline
+**Result**: ✅ App installable on mobile/desktop, works offline with cached data
 
 ### Phase 7: React Admin Panel (2-3 weeks)
 **Goal**: Learn React on real task

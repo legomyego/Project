@@ -41,7 +41,7 @@
                 <span class="badge" :class="getBadgeClass(item.acquisitionType)">
                   {{ item.acquisitionType }}
                 </span>
-                <span class="author">By {{ item.recipe.author.email }}</span>
+                <span class="author">By {{ item.recipe.author.username }}</span>
               </div>
             </div>
 
@@ -89,12 +89,103 @@
       </div>
     </div>
 
-    <!-- Trade Modal (placeholder for now) -->
-    <div v-if="selectedRecipe" class="modal-overlay" @click="selectedRecipe = null">
-      <div class="modal" @click.stop>
-        <h3>Trade Recipe</h3>
-        <p>Feature coming soon: Trade {{ selectedRecipe.title }} with other users</p>
-        <button @click="selectedRecipe = null" class="btn-close">Close</button>
+    <!-- Trade Modal -->
+    <div v-if="showTradeModal" class="modal-overlay" @click="closeTradeModal">
+      <div class="modal trade-modal" @click.stop>
+        <div class="modal-header">
+          <h3>Create Trade Offer</h3>
+          <button @click="closeTradeModal" class="btn-close-x">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Your recipe (selected) -->
+          <div class="trade-section">
+            <h4>You Offer</h4>
+            <div class="recipe-preview">
+              <div class="recipe-name">{{ selectedRecipeForTrade?.title }}</div>
+              <div class="recipe-price">{{ selectedRecipeForTrade?.price }} points</div>
+            </div>
+          </div>
+
+          <div class="trade-arrow">⇄</div>
+
+          <!-- Username search -->
+          <div class="trade-section">
+            <h4>Trade With</h4>
+            <div class="username-search">
+              <input
+                v-model="searchUsername"
+                type="text"
+                placeholder="Enter username..."
+                class="username-input"
+                @input="onUsernameInput"
+              />
+              <button
+                @click="searchUser"
+                :disabled="!searchUsername || isSearching"
+                class="btn-search"
+              >
+                {{ isSearching ? 'Searching...' : 'Search' }}
+              </button>
+            </div>
+
+            <!-- Show found user -->
+            <div v-if="foundUser" class="found-user">
+              ✓ Found: <strong>{{ foundUser.username }}</strong>
+            </div>
+          </div>
+
+          <!-- Select recipe to request -->
+          <div v-if="foundUser" class="trade-section">
+            <h4>You Want</h4>
+
+            <!-- Loading state -->
+            <div v-if="isLoadingAvailable" class="loading-small">Loading recipes...</div>
+
+            <!-- Recipe selector -->
+            <div v-else-if="availableRecipes.length > 0" class="recipe-selector">
+              <select v-model="selectedRequestedRecipeId" class="recipe-select">
+                <option value="">-- Select a recipe --</option>
+                <option
+                  v-for="recipe in availableRecipes"
+                  :key="recipe.id"
+                  :value="recipe.id"
+                >
+                  {{ recipe.title }} ({{ recipe.price }} points)
+                </option>
+              </select>
+            </div>
+
+            <!-- No recipes available -->
+            <div v-else class="no-recipes">
+              <p>This user has no recipes available for trading</p>
+            </div>
+          </div>
+
+          <!-- Error message -->
+          <div v-if="tradeError" class="error-message">{{ tradeError }}</div>
+        </div>
+
+        <div class="modal-footer">
+          <button @click="closeTradeModal" class="btn-secondary">Cancel</button>
+          <button
+            @click="submitTradeOffer"
+            :disabled="!selectedRequestedRecipeId || isSubmitting"
+            class="btn-primary"
+          >
+            {{ isSubmitting ? 'Creating...' : 'Create Offer' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div v-if="showSuccessModal" class="modal-overlay" @click="showSuccessModal = false">
+      <div class="modal success-modal" @click.stop>
+        <div class="success-icon">✅</div>
+        <h3>Trade Offer Created!</h3>
+        <p>Your trade offer has been sent. Check the Trades page to see the status.</p>
+        <button @click="showSuccessModal = false" class="btn-primary">Close</button>
       </div>
     </div>
   </div>
@@ -104,18 +195,31 @@
 // My Recipes page - shows recipes owned by the user (via purchase or trade)
 
 definePageMeta({
-  middleware: 'auth'
+  middleware: 'auth',
+  ssr: false
 })
 
 // Use composables
-const { getMyRecipes } = useTrades()
+const { getMyRecipes, createTradeOffer, searchUserByUsername } = useTrades()
 
-// State
+// State - My Recipes
 const recipes = ref<any[]>([])
 const pagination = ref<any>(null)
 const isLoading = ref(false)
 const error = ref('')
-const selectedRecipe = ref<any>(null)
+
+// State - Trade Modal
+const showTradeModal = ref(false)
+const selectedRecipeForTrade = ref<any>(null)
+const searchUsername = ref('')
+const foundUser = ref<any>(null)
+const isSearching = ref(false)
+const availableRecipes = ref<any[]>([])
+const isLoadingAvailable = ref(false)
+const selectedRequestedRecipeId = ref('')
+const tradeError = ref('')
+const isSubmitting = ref(false)
+const showSuccessModal = ref(false)
 
 // Load recipes on mount
 onMounted(() => {
@@ -171,9 +275,92 @@ const getBadgeClass = (type: string) => {
 /**
  * Open trade modal for selected recipe
  */
-const openTradeModal = (recipe: any) => {
-  selectedRecipe.value = recipe
-  // TODO: Implement full trade modal with user selection
+const openTradeModal = async (recipe: any) => {
+  selectedRecipeForTrade.value = recipe
+  showTradeModal.value = true
+  tradeError.value = ''
+  selectedRequestedRecipeId.value = ''
+  searchUsername.value = ''
+  foundUser.value = null
+  availableRecipes.value = []
+}
+
+/**
+ * Search for a user by username
+ */
+const searchUser = async () => {
+  if (!searchUsername.value.trim()) {
+    return
+  }
+
+  isSearching.value = true
+  isLoadingAvailable.value = true
+  tradeError.value = ''
+  availableRecipes.value = []
+  foundUser.value = null
+
+  const result = await searchUserByUsername(searchUsername.value.trim())
+
+  if (result.success && result.data) {
+    foundUser.value = result.data.user
+    availableRecipes.value = result.data.recipes
+  } else {
+    tradeError.value = result.error || 'User not found'
+  }
+
+  isSearching.value = false
+  isLoadingAvailable.value = false
+}
+
+/**
+ * Handle username input change
+ * Clear results when username changes
+ */
+const onUsernameInput = () => {
+  foundUser.value = null
+  availableRecipes.value = []
+  selectedRequestedRecipeId.value = ''
+  tradeError.value = ''
+}
+
+/**
+ * Close trade modal
+ */
+const closeTradeModal = () => {
+  showTradeModal.value = false
+  selectedRecipeForTrade.value = null
+  selectedRequestedRecipeId.value = ''
+  searchUsername.value = ''
+  foundUser.value = null
+  availableRecipes.value = []
+  tradeError.value = ''
+}
+
+/**
+ * Submit trade offer
+ */
+const submitTradeOffer = async () => {
+  if (!selectedRecipeForTrade.value || !selectedRequestedRecipeId.value || !foundUser.value) {
+    return
+  }
+
+  isSubmitting.value = true
+  tradeError.value = ''
+
+  const result = await createTradeOffer(
+    selectedRecipeForTrade.value.id,
+    foundUser.value.id,
+    selectedRequestedRecipeId.value
+  )
+
+  if (result.success) {
+    showTradeModal.value = false
+    showSuccessModal.value = true
+  } else {
+    tradeError.value = result.error || 'Failed to create trade offer'
+  }
+
+  isSubmitting.value = false
 }
 </script>
 
@@ -437,6 +624,8 @@ const openTradeModal = (recipe: any) => {
   max-width: 400px;
   width: 90%;
   text-align: center;
+  position: relative;
+  z-index: 1001;
 }
 
 .modal h3 {
@@ -457,6 +646,238 @@ const openTradeModal = (recipe: any) => {
   border-radius: 0.5rem;
   cursor: pointer;
   font-weight: 600;
+}
+
+/* Trade Modal Styles */
+.trade-modal {
+  max-width: 600px;
+  padding: 0;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.modal-header h3 {
+  margin: 0;
+}
+
+.btn-close-x {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #999;
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-close-x:hover {
+  color: #333;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.trade-section {
+  margin-bottom: 1rem;
+}
+
+.trade-section h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  color: #999;
+  text-transform: uppercase;
+}
+
+.recipe-preview {
+  background: #f5f7fa;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.recipe-name {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+
+.recipe-price {
+  color: #667eea;
+  font-size: 0.9rem;
+}
+
+.trade-arrow {
+  text-align: center;
+  font-size: 2rem;
+  color: #667eea;
+  margin: 1rem 0;
+}
+
+.username-search {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.username-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+}
+
+.username-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.btn-search {
+  padding: 0.75rem 1.5rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.btn-search:hover:not(:disabled) {
+  background: #5568d3;
+}
+
+.btn-search:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.found-user {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.recipe-selector {
+  margin-top: 0.5rem;
+}
+
+.recipe-select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  background: white;
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
+}
+
+.recipe-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.loading-small {
+  text-align: center;
+  padding: 1rem;
+  color: #999;
+}
+
+.no-recipes {
+  text-align: center;
+  padding: 1rem;
+  color: #999;
+  background: #f5f7fa;
+  border-radius: 0.5rem;
+}
+
+.error-message {
+  background: #fee;
+  color: #c33;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.btn-secondary {
+  padding: 0.75rem 1.5rem;
+  background: #e0e0e0;
+  color: #333;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-secondary:hover {
+  background: #d0d0d0;
+}
+
+.btn-primary {
+  padding: 0.75rem 1.5rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #5568d3;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Success Modal */
+.success-modal {
+  text-align: center;
+  padding: 2rem;
+}
+
+.success-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.success-modal h3 {
+  color: #28a745;
+  margin-bottom: 1rem;
+}
+
+.success-modal p {
+  margin-bottom: 1.5rem;
+  color: #666;
 }
 
 /* Responsive */

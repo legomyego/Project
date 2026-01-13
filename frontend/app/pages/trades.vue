@@ -55,7 +55,7 @@
             class="trade-card"
           >
             <div class="trade-header">
-              <span class="user-label">From: {{ trade.offeringUser?.email }}</span>
+              <span class="user-label">From: {{ trade.offeringUser?.username }}</span>
             </div>
 
             <div class="trade-content">
@@ -129,7 +129,7 @@
             :class="`status-${trade.status.toLowerCase()}`"
           >
             <div class="trade-header">
-              <span class="user-label">To: {{ trade.requestedUser?.email }}</span>
+              <span class="user-label">To: {{ trade.requestedUser?.username }}</span>
               <span class="status-badge" :class="`status-${trade.status.toLowerCase()}`">
                 {{ trade.status }}
               </span>
@@ -189,7 +189,8 @@
 // Trades page - manage incoming and outgoing recipe trade offers
 
 definePageMeta({
-  middleware: 'auth'
+  middleware: 'auth',
+  ssr: false
 })
 
 // Use composables

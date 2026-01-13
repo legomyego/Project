@@ -91,7 +91,8 @@ public static class RecipeEndpoints
                 author = new
                 {
                     id = r.Author!.Id,
-                    email = r.Author.Email
+                    email = r.Author.Email,
+                    username = r.Author.Username
                 }
             })
             .ToListAsync();
@@ -145,7 +146,8 @@ public static class RecipeEndpoints
             author = new
             {
                 id = recipe.Author!.Id,
-                email = recipe.Author.Email
+                email = recipe.Author.Email,
+                username = recipe.Author.Username
             }
         });
     }
@@ -186,7 +188,8 @@ public static class RecipeEndpoints
                     author = new
                     {
                         id = r.Author!.Id,
-                        email = r.Author.Email
+                        email = r.Author.Email,
+                        username = r.Author.Username
                     }
                 })
                 .ToListAsync();
@@ -386,7 +389,8 @@ public static class RecipeEndpoints
                     author = new
                     {
                         id = ur.Recipe.Author!.Id,
-                        email = ur.Recipe.Author.Email
+                        email = ur.Recipe.Author.Email,
+                        username = ur.Recipe.Author.Username
                     }
                 },
                 // Acquisition details - when and how user got this recipe

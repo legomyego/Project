@@ -216,7 +216,8 @@ public static class TradeEndpoints
                 offeringUser = new
                 {
                     id = t.OfferingUser.Id,
-                    email = t.OfferingUser.Email
+                    email = t.OfferingUser.Email,
+                    username = t.OfferingUser.Username
                 },
                 offeredRecipe = new
                 {
@@ -289,7 +290,8 @@ public static class TradeEndpoints
                 requestedUser = new
                 {
                     id = t.RequestedUser.Id,
-                    email = t.RequestedUser.Email
+                    email = t.RequestedUser.Email,
+                    username = t.RequestedUser.Username
                 },
                 offeredRecipe = new
                 {

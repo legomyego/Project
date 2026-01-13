@@ -19,6 +19,13 @@ public class User
     public required string Email { get; set; }
 
     /// <summary>
+    /// User's display name (nickname/username)
+    /// Shows in UI instead of email for better privacy
+    /// Must be unique across all users
+    /// </summary>
+    public required string Username { get; set; }
+
+    /// <summary>
     /// Hashed password using BCrypt or similar
     /// Never store plain text passwords - this contains the hash
     /// </summary>

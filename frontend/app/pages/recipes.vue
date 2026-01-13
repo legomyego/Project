@@ -38,7 +38,7 @@
               <h3>{{ recipe.title }}</h3>
               <div class="recipe-meta">
                 <span class="views">👁️ {{ recipe.views }} views</span>
-                <span class="author">By {{ recipe.author.email }}</span>
+                <span class="author">By {{ recipe.author.username }}</span>
               </div>
             </div>
 

@@ -34,6 +34,84 @@ export default defineNuxtConfig({
     },
   },
 
-  // Modules will be added here
-  // modules: ['@vite-pwa/nuxt'],
+  // Enable PWA module
+  modules: ['@vite-pwa/nuxt'],
+
+  // PWA Configuration
+  pwa: {
+    // Register service worker type
+    registerType: 'autoUpdate',
+
+    // Manifest configuration
+    manifest: {
+      name: 'Recipes PWA',
+      short_name: 'Recipes',
+      description: 'Recipe trading app with points economy',
+      theme_color: '#667eea',
+      background_color: '#ffffff',
+      display: 'standalone',
+      start_url: '/',
+      icons: [
+        {
+          src: '/icon-192x192.png',
+          sizes: '192x192',
+          type: 'image/png',
+        },
+        {
+          src: '/icon-512x512.png',
+          sizes: '512x512',
+          type: 'image/png',
+        },
+        {
+          src: '/icon-512x512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'any maskable',
+        },
+      ],
+    },
+
+    // Workbox configuration for caching
+    workbox: {
+      // Cache navigation requests (HTML pages)
+      navigateFallback: '/',
+
+      // Runtime caching strategies
+      runtimeCaching: [
+        {
+          // Cache API responses with network-first strategy
+          urlPattern: /^http:\/\/localhost:5010\/api\/.*/i,
+          handler: 'NetworkFirst',
+          options: {
+            cacheName: 'api-cache',
+            expiration: {
+              maxEntries: 50,
+              maxAgeSeconds: 60 * 60, // 1 hour
+            },
+            cacheableResponse: {
+              statuses: [0, 200],
+            },
+          },
+        },
+        {
+          // Cache images with cache-first strategy
+          urlPattern: /\.(?:png|jpg|jpeg|svg|gif)$/,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'image-cache',
+            expiration: {
+              maxEntries: 100,
+              maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+            },
+          },
+        },
+      ],
+    },
+
+    // Development options
+    devOptions: {
+      enabled: true, // Enable PWA in development
+      type: 'module',
+    },
+  },
 })

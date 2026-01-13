@@ -42,6 +42,25 @@ export const useTrades = () => {
   const apiBase = config.public.apiBaseUrl || 'http://localhost:5010'
 
   /**
+   * Search for a user by username and get their owned recipes
+   * Used for finding trading partners
+   */
+  const searchUserByUsername = async (username: string) => {
+    try {
+      const response = await $fetch<any>(`${apiBase}/api/users/search`, {
+        method: 'GET',
+        params: { username },
+        credentials: 'include',
+      })
+
+      return { success: true, data: response }
+    } catch (error: any) {
+      const errorMessage = error.data?.error || error.message || 'Failed to find user'
+      return { success: false, error: errorMessage }
+    }
+  }
+
+  /**
    * Create a trade offer
    * Offer one of your recipes in exchange for another user's recipe
    */
@@ -223,6 +242,7 @@ export const useTrades = () => {
   }
 
   return {
+    searchUserByUsername,
     createTradeOffer,
     getIncomingTrades,
     getOutgoingTrades,

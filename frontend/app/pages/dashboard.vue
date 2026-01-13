@@ -132,7 +132,8 @@
 // Dashboard page - user's personal area with balance, top-up, and transactions
 
 definePageMeta({
-  middleware: 'auth'
+  middleware: 'auth',
+  ssr: false // Disable SSR for protected pages to avoid cookie issues
 })
 
 // Use composables

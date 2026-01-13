@@ -27,6 +27,14 @@ public static class UserEndpoints
             .WithSummary("Get current user profile")
             .WithDescription("Returns the profile and balance of the currently authenticated user.")
             .RequireAuthorization(); // This endpoint requires a valid JWT token
+
+        // GET /api/users/search?username={username} - Search user by username and get their recipes
+        // Requires authentication
+        group.MapGet("/search", SearchUserByUsernameAsync)
+            .WithName("SearchUserByUsername")
+            .WithSummary("Search user by username")
+            .WithDescription("Find a user by username and get their owned recipes for trading.")
+            .RequireAuthorization();
     }
 
     /// <summary>
@@ -65,8 +73,77 @@ public static class UserEndpoints
         {
             id = currentUser.Id,
             email = currentUser.Email,
+            username = currentUser.Username,
             balance = currentUser.Balance,
             createdAt = currentUser.CreatedAt
+        });
+    }
+
+    /// <summary>
+    /// Search for a user by username and return their owned recipes
+    /// Used for finding trading partners
+    /// </summary>
+    private static async Task<IResult> SearchUserByUsernameAsync(
+        string username,
+        ClaimsPrincipal user,
+        AppDbContext db)
+    {
+        // Get current user ID from JWT claims
+        var currentUserIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (currentUserIdClaim == null || !Guid.TryParse(currentUserIdClaim, out var currentUserId))
+        {
+            return Results.Unauthorized();
+        }
+
+        // Validate username parameter
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            return Results.BadRequest(new { error = "Username is required" });
+        }
+
+        // Find user by username (case-insensitive search)
+        var targetUser = await db.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
+
+        if (targetUser == null)
+        {
+            return Results.NotFound(new { error = "User not found" });
+        }
+
+        // Don't allow trading with yourself
+        if (targetUser.Id == currentUserId)
+        {
+            return Results.BadRequest(new { error = "Cannot trade with yourself" });
+        }
+
+        // Get all recipes owned by the target user
+        var userRecipes = await db.UserRecipes
+            .Where(ur => ur.UserId == targetUser.Id)
+            .Include(ur => ur.Recipe)
+                .ThenInclude(r => r!.Author)
+            .Select(ur => new
+            {
+                id = ur.Recipe!.Id,
+                title = ur.Recipe.Title,
+                description = ur.Recipe.Description,
+                price = ur.Recipe.Price,
+                author = new
+                {
+                    id = ur.Recipe.Author!.Id,
+                    username = ur.Recipe.Author.Username
+                }
+            })
+            .ToListAsync();
+
+        return Results.Ok(new
+        {
+            user = new
+            {
+                id = targetUser.Id,
+                username = targetUser.Username
+            },
+            recipes = userRecipes
         });
     }
 }

@@ -24,6 +24,21 @@
         </div>
 
         <div class="form-group">
+          <label for="username">Username</label>
+          <input
+            id="username"
+            v-model="username"
+            type="text"
+            required
+            placeholder="username123"
+            minlength="3"
+            pattern="[a-zA-Z0-9_]+"
+            :disabled="isLoading"
+          />
+          <small>At least 3 characters, letters, numbers, and underscores only</small>
+        </div>
+
+        <div class="form-group">
           <label for="password">Password</label>
           <input
             id="password"
@@ -73,6 +88,7 @@ const { register, isLoading } = useAuth()
 
 // Form data - reactive refs for two-way binding
 const email = ref('')
+const username = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const errorMessage = ref('')
@@ -95,7 +111,7 @@ const handleRegister = async () => {
   }
 
   // Call register method from useAuth composable
-  const result = await register(email.value, password.value)
+  const result = await register(email.value, username.value, password.value)
 
   if (result.success) {
     // Registration successful - redirect to dashboard
