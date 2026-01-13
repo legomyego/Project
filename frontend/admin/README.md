@@ -1,73 +1,157 @@
-# React + TypeScript + Vite
+# Recipe PWA - Admin Panel
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React admin panel for managing recipes, users, and viewing analytics.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React 19** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+- **TanStack Query** - Data fetching and caching
+- **TanStack Table** - Advanced table functionality
+- **React Router** - Navigation
+- **React Hook Form** - Form management
+- **shadcn/ui** - UI component library
+- **Tailwind CSS** - Styling
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+✅ **Authentication** - JWT-based auth (shared with Nuxt app)
+✅ **Recipe Management** - View all recipes with sorting and pagination
+✅ **Dashboard** - Overview with statistics and quick navigation
+🚧 **User Management** - Coming soon
+🚧 **Trade Monitoring** - Coming soon
+🚧 **Analytics** - Coming soon
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Prerequisites
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- Node.js 18+
+- Backend API running on http://localhost:5010
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Installation
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The admin panel will be available at http://localhost:5173
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Login
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Use your Recipe PWA account credentials:
+- Email: testuser@example.com
+- Password: password123
+
+Or create a new account via the main Nuxt app.
+
+## Project Structure
+
 ```
+src/
+├── components/
+│   └── ui/           # shadcn/ui components
+├── contexts/
+│   └── AuthContext.tsx   # Authentication state management
+├── lib/
+│   ├── api.ts        # API client
+│   └── utils.ts      # Utility functions
+├── pages/
+│   ├── LoginPage.tsx
+│   ├── DashboardPage.tsx
+│   ├── RecipesPage.tsx
+│   ├── UsersPage.tsx
+│   ├── TradesPage.tsx
+│   └── AnalyticsPage.tsx
+├── App.tsx           # Router and protected routes
+└── main.tsx          # App entry point with providers
+```
+
+## Key Concepts
+
+### TanStack Query
+
+Used for server state management:
+- Automatic caching and background refetching
+- Loading and error states
+- Pagination support
+
+```typescript
+const { data, isLoading, error } = useQuery({
+  queryKey: ['recipes', currentPage],
+  queryFn: () => api.recipes.getAll(currentPage, pageSize),
+  staleTime: 5 * 60 * 1000, // 5 minutes
+})
+```
+
+### TanStack Table
+
+Advanced table with sorting, filtering, and pagination:
+
+```typescript
+const table = useReactTable({
+  data: data?.recipes || [],
+  columns,
+  getCoreRowModel: getCoreRowModel(),
+  getSortedRowModel: getSortedRowModel(),
+  // ...
+})
+```
+
+### Authentication
+
+- JWT stored in httpOnly cookies
+- AuthContext provides user state globally
+- Protected routes redirect to login if not authenticated
+
+## Development
+
+### Build for Production
+
+```bash
+npm run build
+```
+
+### Lint
+
+```bash
+npm run lint
+```
+
+### Preview Production Build
+
+```bash
+npm run preview
+```
+
+## API Integration
+
+The admin panel connects to the same .NET backend as the Nuxt app:
+
+- Base URL: `http://localhost:5010`
+- Authentication: JWT in httpOnly cookies
+- All API calls include `credentials: 'include'`
+
+## Next Steps
+
+Phase 7 development roadmap:
+
+1. ✅ Basic setup and authentication
+2. ✅ Recipe management table
+3. 🚧 Recipe edit form (React Hook Form)
+4. 🚧 User management table
+5. 🚧 Analytics dashboard with charts
+6. 🚧 Trade moderation features
+
+## Learning Resources
+
+- [React Docs](https://react.dev/)
+- [TanStack Query](https://tanstack.com/query/latest)
+- [TanStack Table](https://tanstack.com/table/latest)
+- [shadcn/ui](https://ui.shadcn.com/)
+- [Tailwind CSS](https://tailwindcss.com/)
