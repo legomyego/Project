@@ -27,6 +27,7 @@ export interface AuthResponse {
   email: string
   username: string
   balance: number
+  isAdmin: boolean
   createdAt: string
   message: string
 }
@@ -36,6 +37,7 @@ export interface User {
   email: string
   username: string
   balance: number
+  isAdmin: boolean
   createdAt: string
 }
 
@@ -47,6 +49,7 @@ export interface Recipe {
   price: number
   views: number
   createdAt: string
+  requiresSubscription?: boolean
   author: {
     id: string
     username: string
@@ -86,6 +89,28 @@ export interface Trade {
     title: string
     price: number
   }
+}
+
+// Subscriptions
+export interface Subscription {
+  id: string
+  name: string
+  description?: string
+  durationDays: number
+  price: number
+  isActive: boolean
+  recipeCount?: number
+  createdAt: string
+}
+
+export interface SubscriptionDetail extends Subscription {
+  recipes: {
+    id: string
+    title: string
+    description?: string
+    views: number
+    addedAt: string
+  }[]
 }
 
 /**
@@ -192,6 +217,40 @@ export const api = {
     getMyRecipes: async (): Promise<{ recipes: any[], pagination: any }> => {
       return apiRequest('/api/recipes/my')
     },
+
+    /**
+     * Create a new recipe
+     */
+    create: async (data: { title: string; description: string; price: number }): Promise<Recipe> => {
+      return apiRequest<Recipe>('/api/recipes', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    },
+
+    /**
+     * Update an existing recipe
+     */
+    update: async (id: string, data: {
+      title?: string
+      description?: string
+      price?: number
+      requiresSubscription?: boolean
+    }): Promise<Recipe> => {
+      return apiRequest<Recipe>(`/api/recipes/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      })
+    },
+
+    /**
+     * Delete a recipe
+     */
+    delete: async (id: string): Promise<{ message: string; deletedRecipeId: string }> => {
+      return apiRequest(`/api/recipes/${id}`, {
+        method: 'DELETE',
+      })
+    },
   },
 
   // Trade endpoints
@@ -248,6 +307,71 @@ export const api = {
     cancel: async (tradeId: string) => {
       return apiRequest(`/api/trades/${tradeId}/cancel`, {
         method: 'POST',
+      })
+    },
+  },
+
+  // Subscription endpoints
+  subscriptions: {
+    /**
+     * Get all subscriptions (admin)
+     */
+    getAll: async (): Promise<Subscription[]> => {
+      return apiRequest<Subscription[]>('/api/subscriptions')
+    },
+
+    /**
+     * Get subscription by ID with recipes
+     */
+    getById: async (id: string): Promise<SubscriptionDetail> => {
+      return apiRequest<SubscriptionDetail>(`/api/subscriptions/${id}`)
+    },
+
+    /**
+     * Create new subscription (admin)
+     */
+    create: async (data: { name: string; description?: string; durationDays: number; price: number }): Promise<Subscription> => {
+      return apiRequest<Subscription>('/api/subscriptions', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    },
+
+    /**
+     * Update subscription (admin)
+     */
+    update: async (id: string, data: { name: string; description?: string; durationDays: number; price: number; isActive: boolean }): Promise<Subscription> => {
+      return apiRequest<Subscription>(`/api/subscriptions/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      })
+    },
+
+    /**
+     * Delete subscription (admin)
+     */
+    delete: async (id: string): Promise<void> => {
+      return apiRequest<void>(`/api/subscriptions/${id}`, {
+        method: 'DELETE',
+      })
+    },
+
+    /**
+     * Add recipes to subscription (admin)
+     */
+    addRecipes: async (id: string, recipeIds: string[]): Promise<void> => {
+      return apiRequest<void>(`/api/subscriptions/${id}/recipes`, {
+        method: 'POST',
+        body: JSON.stringify({ recipeIds }),
+      })
+    },
+
+    /**
+     * Remove recipe from subscription (admin)
+     */
+    removeRecipe: async (id: string, recipeId: string): Promise<void> => {
+      return apiRequest<void>(`/api/subscriptions/${id}/recipes/${recipeId}`, {
+        method: 'DELETE',
       })
     },
   },

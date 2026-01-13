@@ -39,6 +39,13 @@ public class User
     public decimal Balance { get; set; } = 0;
 
     /// <summary>
+    /// Whether this user has admin privileges
+    /// Admins can access the admin panel and manage subscriptions, recipes, users
+    /// Regular users cannot access admin features
+    /// </summary>
+    public bool IsAdmin { get; set; } = false;
+
+    /// <summary>
     /// When this user account was created
     /// Useful for analytics and account age verification
     /// </summary>

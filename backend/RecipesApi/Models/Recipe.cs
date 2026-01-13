@@ -53,4 +53,17 @@ public class Recipe
     /// Used for sorting by "newest" and analytics
     /// </summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Whether this recipe requires an active subscription to view
+    /// If true, users must have an active subscription that includes this recipe
+    /// If false, recipe can be purchased individually with points
+    /// </summary>
+    public bool RequiresSubscription { get; set; } = false;
+
+    /// <summary>
+    /// Navigation property: subscriptions that include this recipe
+    /// Many-to-many relationship via SubscriptionRecipe join table
+    /// </summary>
+    public ICollection<SubscriptionRecipe> SubscriptionRecipes { get; set; } = new List<SubscriptionRecipe>();
 }

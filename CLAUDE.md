@@ -370,34 +370,78 @@ Frontend:
 
 **Result**: ✅ App installable on mobile/desktop, works offline with cached data
 
-### Phase 7: React Admin Panel 🚧 IN PROGRESS
-**Goal**: Learn React on real task
+### Phase 7: React Admin Panel ✅ COMPLETE
+**Goal**: Learn React on real task — full-featured admin panel
 
+**Setup & Infrastructure:**
 - [x] Initialize React + Vite + TypeScript
-- [x] Setup shadcn/ui (Button, Card, Table, Input, Label components)
+- [x] Setup shadcn/ui (Button, Card, Table, Input, Label, Dialog components)
 - [x] Authentication (same JWT as Nuxt app)
   - AuthContext with login/logout
   - Protected routes
   - Cookie-based authentication
+  - IsAdmin check (rejects non-admin users)
 - [x] TanStack Query — API connection and caching
 - [x] React Router with authentication guards
-- [x] Recipe list (TanStack Table):
-  - ✅ Table with sorting support
-  - ✅ Server-side pagination
-  - ✅ Data fetching with TanStack Query
-  - 🚧 Moderation features (approve/reject) - coming soon
-- [ ] Recipe edit form (React Hook Form)
-- [ ] User management table
-- [ ] Stats dashboard with real data
+- [x] Two-way navigation (admin ↔ main app)
 
-Pages completed:
+**Subscription System:**
+- [x] Subscription management (full CRUD):
+  - Create new subscription plans
+  - Edit subscription details (name, description, duration, price, isActive)
+  - Delete (deactivate) subscriptions
+  - View all subscriptions with cards
+- [x] Recipe assignment to subscriptions:
+  - SubscriptionDetailPage with recipe management
+  - Search and multi-select recipes to add
+  - Remove recipes from subscription
+  - Live sync with backend
+- [x] Backend integration:
+  - Subscription, UserSubscription, SubscriptionRecipe models
+  - Recipe.RequiresSubscription field
+  - Access control for subscription-only recipes
+  - User subscription purchase endpoint
+
+**Recipe Management:**
+- [x] Recipe list (TanStack Table):
+  - Table with sorting support
+  - Server-side pagination
+  - Data fetching with TanStack Query
+  - Edit and Delete actions
+- [x] Recipe edit form (React Hook Form):
+  - Edit title, description, price
+  - Toggle "Requires Subscription" checkbox
+  - Form validation
+  - Optimistic updates
+- [x] Recipe deletion with confirmation
+- [x] Backend endpoints:
+  - PUT /api/recipes/{id} — update recipe
+  - DELETE /api/recipes/{id} — delete recipe
+  - Permission check: only admin or author can edit/delete
+
+**Admin Access Control:**
+- [x] IsAdmin flag on User model
+- [x] Admin detection in login flow
+- [x] Temporary make-admin endpoint for setup
+- [x] Admin-only route protection
+
+**Pages Completed:**
 - ✅ Login page with form validation
-- ✅ Dashboard with stats cards and navigation
-- ✅ Recipes page with TanStack Table
-- 📋 Users, Trades, Analytics (placeholders)
+- ✅ Dashboard with stats cards, navigation, "Go to Main App" button
+- ✅ Recipes page with TanStack Table, Edit/Delete
+- ✅ Subscriptions page with full CRUD
+- ✅ Subscription detail page with recipe assignment
+- 📋 Users, Trades, Analytics (placeholders for future)
+
+**Integration with Main App:**
+- ✅ Nuxt dashboard shows "Admin Panel" button (only for admins)
+- ✅ Admin panel dashboard shows "Go to Main App" button
+- ✅ Shared JWT authentication across both apps
+- ✅ Subscription purchase page in Nuxt app
+- ✅ Active subscription display on Nuxt dashboard
 
 **Running**: http://localhost:5173 (admin panel)
-**Result**: 🎯 Basic admin panel working — login, view recipes, navigation
+**Result**: ✅ Full-featured admin panel — manage subscriptions, assign recipes, edit/delete recipes, seamless integration with main app
 
 ### Phase 6: Integration & Deploy (1 week)
 - [ ] Nginx config (reverse proxy)

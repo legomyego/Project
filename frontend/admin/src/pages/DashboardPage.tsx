@@ -34,9 +34,17 @@ export function DashboardPage() {
               <h1 className="text-2xl font-bold text-slate-900">Admin Dashboard</h1>
               <p className="text-sm text-slate-600">Welcome, {user?.username || user?.email}</p>
             </div>
-            <Button variant="outline" onClick={handleLogout}>
-              Logout
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="default"
+                onClick={() => window.location.href = 'http://localhost:3000/dashboard'}
+              >
+                Go to Main App →
+              </Button>
+              <Button variant="outline" onClick={handleLogout}>
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -105,6 +113,18 @@ export function DashboardPage() {
             </CardHeader>
             <CardContent>
               <Button variant="secondary">Manage Recipes →</Button>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/subscriptions')}>
+            <CardHeader>
+              <CardTitle>Subscription Management</CardTitle>
+              <CardDescription>
+                Create and manage subscription plans and included recipes
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="secondary">Manage Subscriptions →</Button>
             </CardContent>
           </Card>
 

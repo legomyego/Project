@@ -3,7 +3,12 @@
     <!-- Header with user info and logout -->
     <header class="dashboard-header">
       <h1>Dashboard</h1>
-      <button @click="handleLogout" class="btn-logout">Logout</button>
+      <div class="header-actions">
+        <a v-if="user?.isAdmin" href="http://localhost:5173" class="btn-admin">
+          Admin Panel
+        </a>
+        <button @click="handleLogout" class="btn-logout">Logout</button>
+      </div>
     </header>
 
     <!-- Loading state -->
@@ -57,8 +62,37 @@
         </div>
       </div>
 
+      <!-- Active Subscription Card -->
+      <div v-if="activeSubscription" class="card subscription-card">
+        <div class="subscription-header">
+          <h3>✨ Active Subscription</h3>
+          <span class="badge-active">Active</span>
+        </div>
+        <div class="subscription-details">
+          <div class="subscription-name">{{ activeSubscription.subscription.name }}</div>
+          <div class="subscription-info">
+            <div class="info-item">
+              <span class="info-label">Days Remaining:</span>
+              <span class="info-value">{{ activeSubscription.daysRemaining }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Expires:</span>
+              <span class="info-value">{{ formatDate(activeSubscription.endDate) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Quick Links -->
       <div class="quick-links">
+        <NuxtLink to="/subscriptions" class="link-card subscription-link">
+          <div class="link-icon">⭐</div>
+          <div class="link-text">
+            <h3>Subscriptions</h3>
+            <p>Get premium recipe access</p>
+          </div>
+        </NuxtLink>
+
         <NuxtLink to="/recipes" class="link-card">
           <div class="link-icon">📖</div>
           <div class="link-text">
@@ -151,10 +185,29 @@ const topupSuccess = ref('')
 const transactions = ref<any[]>([])
 const isLoadingTransactions = ref(false)
 
-// Load transactions on mount
+// Active subscription state
+const activeSubscription = ref<any>(null)
+
+// Load transactions and active subscription on mount
 onMounted(async () => {
   await loadTransactions()
+  await loadActiveSubscription()
 })
+
+/**
+ * Load user's active subscription
+ */
+const loadActiveSubscription = async () => {
+  try {
+    const response = await $fetch('/api/subscriptions/my')
+    // Get the first active subscription (if any)
+    if (Array.isArray(response) && response.length > 0) {
+      activeSubscription.value = response[0]
+    }
+  } catch (err) {
+    console.error('Failed to load active subscription:', err)
+  }
+}
 
 /**
  * Load user's transaction history
@@ -281,6 +334,29 @@ const getAmountClass = (amount: number) => {
   margin: 0;
   font-size: 1.75rem;
   color: #333;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.btn-admin {
+  padding: 0.5rem 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.2s;
+  display: inline-block;
+}
+
+.btn-admin:hover {
+  transform: translateY(-2px);
 }
 
 .btn-logout {
@@ -446,6 +522,61 @@ const getAmountClass = (amount: number) => {
   border: 1px solid #cfc;
 }
 
+/* Subscription Card */
+.subscription-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  margin-bottom: 2rem;
+}
+
+.subscription-card h3 {
+  color: white;
+  margin: 0;
+}
+
+.subscription-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.badge-active {
+  background: rgba(255, 255, 255, 0.3);
+  padding: 0.375rem 0.875rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.subscription-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.subscription-info {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.info-label {
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+
+.info-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
 /* Quick links */
 .quick-links {
   display: grid;
@@ -468,6 +599,11 @@ const getAmountClass = (amount: number) => {
 
 .link-card:hover {
   transform: translateY(-2px);
+}
+
+.subscription-link {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #f59e0b;
 }
 
 .link-icon {

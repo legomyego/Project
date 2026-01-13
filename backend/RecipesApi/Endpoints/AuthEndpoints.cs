@@ -129,6 +129,7 @@ public static class AuthEndpoints
             email = user.Email,
             username = user.Username,
             balance = user.Balance,
+            isAdmin = user.IsAdmin,
             createdAt = user.CreatedAt,
             message = "Registration successful"
         });
@@ -189,6 +190,7 @@ public static class AuthEndpoints
             email = user.Email,
             username = user.Username,
             balance = user.Balance,
+            isAdmin = user.IsAdmin,
             createdAt = user.CreatedAt,
             message = "Login successful"
         });

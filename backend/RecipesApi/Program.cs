@@ -211,13 +211,27 @@ app.MapGet("/api/health", () => new
 .WithName("HealthCheck")
 .WithTags("System");
 
+// TEMPORARY: Admin setup endpoint - remove after setting up admin users
+app.MapPost("/api/admin/make-admin/{userId:guid}", async (Guid userId, AppDbContext db) =>
+{
+    var user = await db.Users.FindAsync(userId);
+    if (user == null) return Results.NotFound(new { error = "User not found" });
+
+    user.IsAdmin = true;
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new { message = $"User {user.Email} is now an admin", isAdmin = user.IsAdmin });
+})
+.WithTags("System");
+
 // Register API endpoint groups
 // Each endpoint group is defined in a separate file in the Endpoints folder
-app.MapAuthEndpoints();     // Authentication: /api/auth/*
-app.MapUserEndpoints();     // Users: /api/users/*
-app.MapRecipeEndpoints();   // Recipes: /api/recipes/*
-app.MapPointsEndpoints();   // Points: /api/points/*
-app.MapTradeEndpoints();    // Trades: /api/trades/*
+app.MapAuthEndpoints();          // Authentication: /api/auth/*
+app.MapUserEndpoints();          // Users: /api/users/*
+app.MapRecipeEndpoints();        // Recipes: /api/recipes/*
+app.MapPointsEndpoints();        // Points: /api/points/*
+app.MapTradeEndpoints();         // Trades: /api/trades/*
+app.MapSubscriptionEndpoints();  // Subscriptions: /api/subscriptions/*
 
 // ==================== START APPLICATION ====================
 

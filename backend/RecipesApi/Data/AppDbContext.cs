@@ -53,6 +53,27 @@ public class AppDbContext : DbContext
     public DbSet<Trade> Trades => Set<Trade>();
 
     /// <summary>
+    /// DbSet for Subscriptions table
+    /// Contains all subscription plans that users can purchase
+    /// EF Core maps this to a "Subscriptions" table
+    /// </summary>
+    public DbSet<Subscription> Subscriptions => Set<Subscription>();
+
+    /// <summary>
+    /// DbSet for UserSubscriptions table
+    /// Tracks which users have which active or expired subscriptions
+    /// EF Core maps this to a "UserSubscriptions" table
+    /// </summary>
+    public DbSet<UserSubscription> UserSubscriptions => Set<UserSubscription>();
+
+    /// <summary>
+    /// DbSet for SubscriptionRecipes junction table
+    /// Represents the many-to-many relationship between Subscriptions and Recipes
+    /// Tracks which recipes are included in which subscription plans
+    /// </summary>
+    public DbSet<SubscriptionRecipe> SubscriptionRecipes => Set<SubscriptionRecipe>();
+
+    /// <summary>
     /// Configure entity relationships and constraints using Fluent API
     /// This method is called when EF Core creates the model
     /// </summary>
@@ -80,6 +101,10 @@ public class AppDbContext : DbContext
             entity.Property(u => u.Balance)
                 .HasPrecision(18, 2)
                 .HasDefaultValue(0);
+
+            // IsAdmin defaults to false - regular user by default
+            entity.Property(u => u.IsAdmin)
+                .HasDefaultValue(false);
 
             // CreatedAt defaults to current UTC time
             entity.Property(u => u.CreatedAt)
@@ -216,6 +241,87 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(t => t.RequestedRecipeId)
                 .OnDelete(DeleteBehavior.Restrict); // Restrict to prevent accidental deletion
+        });
+
+        // Configure Subscription entity
+        modelBuilder.Entity<Subscription>(entity =>
+        {
+            // Name is required
+            entity.Property(s => s.Name)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            // Description is optional but has max length
+            entity.Property(s => s.Description)
+                .HasMaxLength(1000);
+
+            // Price uses decimal(18,2) precision
+            entity.Property(s => s.Price)
+                .HasPrecision(18, 2);
+
+            // DurationDays is required (must be positive)
+            entity.Property(s => s.DurationDays)
+                .IsRequired();
+
+            // IsActive defaults to true
+            entity.Property(s => s.IsActive)
+                .HasDefaultValue(true);
+
+            // CreatedAt defaults to current UTC time
+            entity.Property(s => s.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+        });
+
+        // Configure UserSubscription entity
+        modelBuilder.Entity<UserSubscription>(entity =>
+        {
+            // IsActive defaults to true
+            entity.Property(us => us.IsActive)
+                .HasDefaultValue(true);
+
+            // CreatedAt defaults to current UTC time
+            entity.Property(us => us.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            // Configure relationship: UserSubscription belongs to User
+            // When a User is deleted, their subscriptions are also deleted (cascade)
+            entity.HasOne(us => us.User)
+                .WithMany()
+                .HasForeignKey(us => us.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure relationship: UserSubscription belongs to Subscription
+            // When a Subscription is deleted, user subscriptions are restricted (don't allow)
+            entity.HasOne(us => us.Subscription)
+                .WithMany(s => s.UserSubscriptions)
+                .HasForeignKey(us => us.SubscriptionId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Configure SubscriptionRecipe junction table (many-to-many between Subscription and Recipe)
+        modelBuilder.Entity<SubscriptionRecipe>(entity =>
+        {
+            // Composite primary key: combination of SubscriptionId and RecipeId must be unique
+            // A recipe can only be in a subscription once
+            entity.HasKey(sr => new { sr.SubscriptionId, sr.RecipeId });
+
+            // AddedAt defaults to current UTC time
+            entity.Property(sr => sr.AddedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            // Configure relationship: SubscriptionRecipe belongs to Subscription
+            // When a Subscription is deleted, its recipe links are also deleted (cascade)
+            entity.HasOne(sr => sr.Subscription)
+                .WithMany(s => s.SubscriptionRecipes)
+                .HasForeignKey(sr => sr.SubscriptionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure relationship: SubscriptionRecipe belongs to Recipe
+            // When a Recipe is deleted, subscription links are also deleted (cascade)
+            entity.HasOne(sr => sr.Recipe)
+                .WithMany(r => r.SubscriptionRecipes)
+                .HasForeignKey(sr => sr.RecipeId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

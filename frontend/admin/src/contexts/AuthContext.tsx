@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   /**
    * Load user data on mount
-   * Checks if user has valid auth cookie by calling /api/users/me
+   * Checks if user has valid auth cookie and admin privileges
    */
   useEffect(() => {
     const loadUser = async () => {
@@ -51,7 +51,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Try to get current user from backend
         // If auth cookie is valid, this will return user data
         const userData = await api.auth.getCurrentUser()
-        setUser(userData)
+
+        // Only set user if they have admin privileges
+        if (userData.isAdmin) {
+          setUser(userData)
+        } else {
+          // User is authenticated but not an admin - log them out
+          await api.auth.logout()
+          setUser(null)
+        }
       } catch (error) {
         // If request fails, user is not authenticated
         // This is normal - it just means no valid cookie exists
@@ -68,13 +76,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   /**
    * Login function
    * Calls API to authenticate and stores user data
+   * Only allows login if user has admin privileges
    *
-   * @throws Error if login fails (wrong credentials, network error, etc.)
+   * @throws Error if login fails or user is not an admin
    */
   const login = async (email: string, password: string) => {
     try {
       // Call login API - this sets the auth cookie
       const response = await api.auth.login({ email, password })
+
+      // Check if user is an admin
+      if (!response.isAdmin) {
+        // User is not an admin - clear cookie and reject
+        await api.auth.logout()
+        throw new Error('Access denied. Admin privileges required.')
+      }
 
       // Store user data in state
       setUser({
@@ -82,6 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: response.email,
         username: response.username,
         balance: response.balance,
+        isAdmin: response.isAdmin,
         createdAt: response.createdAt,
       })
     } catch (error) {

@@ -75,6 +75,7 @@ public static class UserEndpoints
             email = currentUser.Email,
             username = currentUser.Username,
             balance = currentUser.Balance,
+            isAdmin = currentUser.IsAdmin,
             createdAt = currentUser.CreatedAt
         });
     }

@@ -8,6 +8,7 @@ interface User {
   email: string
   username: string
   balance: number
+  isAdmin: boolean
   createdAt: string
 }
 
@@ -30,6 +31,7 @@ interface AuthResponse {
   email: string
   username: string
   balance: number
+  isAdmin: boolean
   createdAt: string
   message: string
 }
@@ -68,6 +70,7 @@ export const useAuth = () => {
         email: response.email,
         username: response.username,
         balance: response.balance,
+        isAdmin: response.isAdmin,
         createdAt: response.createdAt,
       }
 
@@ -101,6 +104,7 @@ export const useAuth = () => {
         email: response.email,
         username: response.username,
         balance: response.balance,
+        isAdmin: response.isAdmin,
         createdAt: response.createdAt,
       }
 

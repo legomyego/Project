@@ -6,6 +6,8 @@ import { useAuth } from './contexts/AuthContext'
 import { LoginPage } from './pages/LoginPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { RecipesPage } from './pages/RecipesPage'
+import { SubscriptionsPage } from './pages/SubscriptionsPage'
+import { SubscriptionDetailPage } from './pages/SubscriptionDetailPage'
 import { UsersPage } from './pages/UsersPage'
 import { TradesPage } from './pages/TradesPage'
 import { AnalyticsPage } from './pages/AnalyticsPage'
@@ -59,6 +61,22 @@ function App() {
         element={
           <ProtectedRoute>
             <RecipesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/subscriptions"
+        element={
+          <ProtectedRoute>
+            <SubscriptionsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/subscriptions/:id"
+        element={
+          <ProtectedRoute>
+            <SubscriptionDetailPage />
           </ProtectedRoute>
         }
       />
