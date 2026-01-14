@@ -37,7 +37,10 @@ export function DashboardPage() {
             <div className="flex gap-2">
               <Button
                 variant="default"
-                onClick={() => window.location.href = 'http://localhost:3000/dashboard'}
+                onClick={() => {
+                  const mainAppUrl = import.meta.env.VITE_MAIN_APP_URL || 'http://localhost:3000'
+                  window.location.href = `${mainAppUrl}/dashboard`
+                }}
               >
                 Go to Main App →
               </Button>

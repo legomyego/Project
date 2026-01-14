@@ -4,7 +4,7 @@
     <header class="dashboard-header">
       <h1>Dashboard</h1>
       <div class="header-actions">
-        <a v-if="user?.isAdmin" href="http://localhost:5173" class="btn-admin">
+        <a v-if="user?.isAdmin" :href="adminUrl" class="btn-admin">
           Admin Panel
         </a>
         <button @click="handleLogout" class="btn-logout">Logout</button>
@@ -174,6 +174,10 @@ definePageMeta({
 const { user, logout } = useAuth()
 const { topUp, getTransactions } = usePoints()
 const router = useRouter()
+
+// Get runtime config for admin URL
+const config = useRuntimeConfig()
+const adminUrl = config.public.adminUrl || 'http://localhost:5173'
 
 // Top-up form state
 const topupAmount = ref<number | null>(null)

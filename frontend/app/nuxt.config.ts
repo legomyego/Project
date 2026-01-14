@@ -15,6 +15,19 @@ export default defineNuxtConfig({
     port: 3000,
   },
 
+  // Vite configuration
+  vite: {
+    server: {
+      // Allow access from recipes.local domain (proxied through nginx)
+      allowedHosts: ['recipes.local', 'localhost', '127.0.0.1'],
+      hmr: {
+        // Enable HMR (Hot Module Replacement) through the proxy
+        protocol: 'ws',
+        host: 'recipes.local',
+      },
+    },
+  },
+
   // TypeScript configuration
   typescript: {
     strict: true,
@@ -24,7 +37,7 @@ export default defineNuxtConfig({
   // App configuration
   app: {
     head: {
-      title: 'Recipes PWA',
+      title: 'Recipes PWA - Share & Trade Recipes',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
@@ -38,8 +51,12 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:5010',
+      adminUrl: process.env.NUXT_PUBLIC_ADMIN_URL || 'http://localhost:5173',
     },
   },
+
+  // Global CSS
+  css: ['~/assets/css/main.css'],
 
   // Enable PWA module
   modules: ['@vite-pwa/nuxt'],

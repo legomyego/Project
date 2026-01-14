@@ -22,41 +22,6 @@ namespace RecipesApi.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("RecipesApi.Models.PasswordResetToken", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsUsed")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Token")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExpiresAt");
-
-                    b.HasIndex("Token")
-                        .IsUnique();
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("PasswordResetTokens");
-                });
-
             modelBuilder.Entity("RecipesApi.Models.Recipe", b =>
                 {
                     b.Property<Guid>("Id")
@@ -96,7 +61,7 @@ namespace RecipesApi.Migrations
 
                     b.HasIndex("AuthorId");
 
-                    b.ToTable("Recipes");
+                    b.ToTable("Recipes", (string)null);
                 });
 
             modelBuilder.Entity("RecipesApi.Models.Subscription", b =>
@@ -133,7 +98,7 @@ namespace RecipesApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Subscriptions");
+                    b.ToTable("Subscriptions", (string)null);
                 });
 
             modelBuilder.Entity("RecipesApi.Models.SubscriptionRecipe", b =>
@@ -153,7 +118,7 @@ namespace RecipesApi.Migrations
 
                     b.HasIndex("RecipeId");
 
-                    b.ToTable("SubscriptionRecipes");
+                    b.ToTable("SubscriptionRecipes", (string)null);
                 });
 
             modelBuilder.Entity("RecipesApi.Models.Trade", b =>
@@ -195,7 +160,7 @@ namespace RecipesApi.Migrations
 
                     b.HasIndex("RequestedUserId");
 
-                    b.ToTable("Trades");
+                    b.ToTable("Trades", (string)null);
                 });
 
             modelBuilder.Entity("RecipesApi.Models.Transaction", b =>
@@ -228,7 +193,7 @@ namespace RecipesApi.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Transactions");
+                    b.ToTable("Transactions", (string)null);
                 });
 
             modelBuilder.Entity("RecipesApi.Models.User", b =>
@@ -271,7 +236,7 @@ namespace RecipesApi.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("RecipesApi.Models.UserRecipe", b =>
@@ -294,7 +259,7 @@ namespace RecipesApi.Migrations
 
                     b.HasIndex("RecipeId");
 
-                    b.ToTable("UserRecipes");
+                    b.ToTable("UserRecipes", (string)null);
                 });
 
             modelBuilder.Entity("RecipesApi.Models.UserSubscription", b =>
@@ -331,18 +296,7 @@ namespace RecipesApi.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserSubscriptions");
-                });
-
-            modelBuilder.Entity("RecipesApi.Models.PasswordResetToken", b =>
-                {
-                    b.HasOne("RecipesApi.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
+                    b.ToTable("UserSubscriptions", (string)null);
                 });
 
             modelBuilder.Entity("RecipesApi.Models.Recipe", b =>

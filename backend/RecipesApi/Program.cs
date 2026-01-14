@@ -103,17 +103,20 @@ builder.Services.AddAuthorization();
 
 // Configure CORS (Cross-Origin Resource Sharing)
 // This allows frontend applications to make requests to the API
+// Supports both direct port access and nginx proxy domains
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        // Allow requests from Nuxt app (port 3000) and React admin (port 5173)
+        // Allow requests from both localhost and local domain setup
         policy.WithOrigins(
-                "http://localhost:3000",  // Nuxt main app
-                "http://localhost:5173"   // React admin panel
+                "http://localhost:3000",        // Nuxt main app (direct)
+                "http://localhost:5173",        // React admin panel (direct)
+                "http://recipes.local",         // Nuxt main app (via nginx)
+                "http://admin.recipes.local"    // React admin panel (via nginx)
             )
             // Allow credentials (cookies) to be sent with requests
-            // Required for httpOnly cookie authentication
+            // Required for httpOnly cookie authentication and shared sessions
             .AllowCredentials()
             // Allow any HTTP method (GET, POST, PUT, DELETE, etc.)
             .AllowAnyMethod()

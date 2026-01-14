@@ -4,6 +4,10 @@ Progressive Web App for buying, selling, and trading recipes with points economy
 
 ## 🚀 Quick Start
 
+> **⚠️ Важно:** После клонирования проекта создай админа: `./create-admin.sh`
+>
+> Пароли хранятся в `.credentials` (не коммитится в git)
+
 ### Prerequisites
 - [Docker](https://www.docker.com/get-started) and Docker Compose
 - OR: [.NET 9](https://dotnet.microsoft.com/download), [Node.js 20+](https://nodejs.org/), [PostgreSQL 16](https://www.postgresql.org/download/)

@@ -1,7 +1,6 @@
 // Authentication middleware
 // Protects routes that require user to be logged in
 // Redirects to login page if user is not authenticated
-// Note: Global middleware (00.init-auth.global.ts) loads user first
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
   // CRITICAL: Only run on client side
@@ -10,10 +9,14 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     return
   }
 
-  const { user } = useAuth()
+  const { user, fetchUser, isLoading } = useAuth()
 
-  // Simply check if user exists
-  // Global middleware already tried to load user from cookie
+  // If user is not loaded yet and we're not currently loading, try to fetch
+  if (!user.value && !isLoading.value) {
+    await fetchUser()
+  }
+
+  // After fetch attempt, check if user exists
   if (!user.value) {
     return navigateTo('/login')
   }

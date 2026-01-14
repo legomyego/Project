@@ -44,7 +44,8 @@ export function SubscriptionDetailPage() {
   const { data: recipesData, isLoading: isLoadingRecipes } = useQuery({
     queryKey: ['recipes'],
     queryFn: async () => {
-      const response = await fetch('http://localhost:5010/api/recipes?page=1&pageSize=100', {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5010'
+      const response = await fetch(`${API_BASE_URL}/api/recipes?page=1&pageSize=100`, {
         credentials: 'include',
       })
       if (!response.ok) {

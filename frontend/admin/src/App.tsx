@@ -3,7 +3,6 @@
 
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
-import { LoginPage } from './pages/LoginPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { RecipesPage } from './pages/RecipesPage'
 import { SubscriptionsPage } from './pages/SubscriptionsPage'
@@ -14,7 +13,7 @@ import { AnalyticsPage } from './pages/AnalyticsPage'
 
 /**
  * ProtectedRoute component
- * Redirects to login if user is not authenticated
+ * Redirects to main app login if user is not authenticated or not admin
  */
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
@@ -28,9 +27,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // Redirect to login if not authenticated
+  // Redirect to main app login if not authenticated
+  // User must login on the main app, then return to admin panel
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    const mainAppUrl = import.meta.env.VITE_MAIN_APP_URL || 'http://localhost:3000'
+    const adminUrl = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://admin.recipes.local'
+    // Add redirect parameter so user returns to admin after login
+    window.location.href = `${mainAppUrl}/login?redirect=${encodeURIComponent(adminUrl)}`
+    return null
   }
 
   // Render children if authenticated
@@ -44,10 +48,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function App() {
   return (
     <Routes>
-      {/* Public route - Login */}
-      <Route path="/login" element={<LoginPage />} />
-
-      {/* Protected routes - require authentication */}
+      {/* All routes are protected - no separate login page */}
+      {/* Users must login on the main app (recipes.local) first */}
       <Route
         path="/dashboard"
         element={

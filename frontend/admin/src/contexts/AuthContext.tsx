@@ -8,12 +8,12 @@ import { api, type User } from '@/lib/api'
 /**
  * AuthContext value interface
  * Defines what data and methods are available to components
+ * Note: No login method - users must login on the main app
  */
 interface AuthContextType {
   user: User | null
   isLoading: boolean
   isAuthenticated: boolean
-  login: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -73,42 +73,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   /**
-   * Login function
-   * Calls API to authenticate and stores user data
-   * Only allows login if user has admin privileges
-   *
-   * @throws Error if login fails or user is not an admin
-   */
-  const login = async (email: string, password: string) => {
-    try {
-      // Call login API - this sets the auth cookie
-      const response = await api.auth.login({ email, password })
-
-      // Check if user is an admin
-      if (!response.isAdmin) {
-        // User is not an admin - clear cookie and reject
-        await api.auth.logout()
-        throw new Error('Access denied. Admin privileges required.')
-      }
-
-      // Store user data in state
-      setUser({
-        id: response.id,
-        email: response.email,
-        username: response.username,
-        balance: response.balance,
-        isAdmin: response.isAdmin,
-        createdAt: response.createdAt,
-      })
-    } catch (error) {
-      // Re-throw error so calling component can handle it
-      throw error
-    }
-  }
-
-  /**
    * Logout function
    * Calls API to clear auth cookie and resets user state
+   * After logout, redirects to main app
    */
   const logout = async () => {
     try {
@@ -128,7 +95,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     isLoading,
     isAuthenticated,
-    login,
     logout,
   }
 
@@ -142,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
  * @throws Error if used outside AuthProvider
  *
  * Usage:
- * const { user, login, logout } = useAuth()
+ * const { user, logout } = useAuth()
  */
 export function useAuth() {
   const context = useContext(AuthContext)

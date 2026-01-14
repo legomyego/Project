@@ -36,6 +36,11 @@ dist/
 appsettings.Development.json
 *.key
 *.pem
+.credentials
+QUICK-START.txt
+credentials.txt
+secrets.txt
+passwords.txt
 
 # IDEs
 .idea/

@@ -115,11 +115,13 @@ public static class AuthEndpoints
         // Set JWT token as httpOnly cookie
         // httpOnly prevents JavaScript access (XSS protection)
         // Secure flag will be enabled in production (HTTPS only)
+        // Domain set to ".recipes.local" allows cookie to work across all subdomains
         httpContext.Response.Cookies.Append("auth_token", token, new CookieOptions
         {
             HttpOnly = false, // Temporarily false for debugging (set true in production)
             Secure = false, // Set to true in production with HTTPS
             SameSite = SameSiteMode.Lax, // Lax works for localhost same-site requests
+            Domain = ".recipes.local", // Share cookie across all subdomains (recipes.local, admin.recipes.local)
             Path = "/",
             Expires = DateTimeOffset.UtcNow.AddDays(7) // Cookie expires in 7 days
         });
@@ -176,11 +178,13 @@ public static class AuthEndpoints
         var token = jwtService.GenerateToken(user.Id, user.Email);
 
         // Set JWT token as httpOnly cookie
+        // Domain set to ".recipes.local" allows cookie to work across all subdomains
         httpContext.Response.Cookies.Append("auth_token", token, new CookieOptions
         {
             HttpOnly = false, // Temporarily false for debugging (set true in production)
             Secure = false, // Set to true in production with HTTPS
             SameSite = SameSiteMode.Lax, // Lax works for localhost same-site requests
+            Domain = ".recipes.local", // Share cookie across all subdomains (recipes.local, admin.recipes.local)
             Path = "/",
             Expires = DateTimeOffset.UtcNow.AddDays(7)
         });
@@ -206,7 +210,12 @@ public static class AuthEndpoints
     {
         // Delete the auth_token cookie
         // This immediately invalidates the user's session
-        httpContext.Response.Cookies.Delete("auth_token");
+        // Must specify the same Domain to properly delete the cookie
+        httpContext.Response.Cookies.Delete("auth_token", new CookieOptions
+        {
+            Domain = ".recipes.local", // Same domain as when cookie was set
+            Path = "/"
+        });
 
         return Results.Ok(new { message = "Logout successful" });
     }

@@ -144,6 +144,13 @@ export const useAuth = () => {
    * Requires valid JWT token in cookie
    */
   const fetchUser = async () => {
+    // Prevent multiple simultaneous fetches
+    if (isLoading.value) {
+      return { success: false }
+    }
+
+    isLoading.value = true
+
     try {
       const response = await $fetch<User>(`${apiBase}/api/users/me`, {
         credentials: 'include',
@@ -155,6 +162,8 @@ export const useAuth = () => {
       // Token invalid or expired - clear user
       user.value = null
       return { success: false }
+    } finally {
+      isLoading.value = false
     }
   }
 
