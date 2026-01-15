@@ -3,6 +3,7 @@
 
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
+import { Layout } from './components/Layout'
 import { DashboardPage } from './pages/DashboardPage'
 import { RecipesPage } from './pages/RecipesPage'
 import { SubscriptionsPage } from './pages/SubscriptionsPage'
@@ -37,8 +38,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return null
   }
 
-  // Render children if authenticated
-  return <>{children}</>
+  // Render children wrapped in Layout if authenticated
+  return <Layout>{children}</Layout>
 }
 
 /**

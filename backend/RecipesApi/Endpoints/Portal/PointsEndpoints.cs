@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using RecipesApi.Data;
 using RecipesApi.Models;
 
-namespace RecipesApi.Endpoints;
+namespace RecipesApi.Endpoints.Portal;
 
 /// <summary>
 /// Extension class for registering points-related endpoints

@@ -5,8 +5,9 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RecipesApi.Data;
-using RecipesApi.Endpoints;
 using RecipesApi.Services;
+// Import endpoint namespaces without directly importing extension methods
+// This avoids conflicts when both namespaces have classes with same names
 
 // Create the web application builder
 // This is the entry point for configuring services and middleware
@@ -272,14 +273,21 @@ app.MapPost("/api/admin/make-admin/{userId:guid}", async (Guid userId, AppDbCont
 .WithTags("System");
 
 // Register API endpoint groups
-// Each endpoint group is defined in a separate file in the Endpoints folder
-app.MapAuthEndpoints();          // Authentication: /api/auth/*
-app.MapUserEndpoints();          // Users: /api/users/*
-app.MapRecipeEndpoints();        // Recipes: /api/recipes/*
-app.MapPointsEndpoints();        // Points: /api/points/*
-app.MapTradeEndpoints();         // Trades: /api/trades/*
-app.MapSubscriptionEndpoints();  // Subscriptions: /api/subscriptions/*
-app.MapAnalyticsEndpoints();     // Analytics: /api/analytics/*
+// Endpoints are organized into Portal (public) and Admin (admin-only) folders
+
+// Portal endpoints - Public-facing API (/api/*)
+RecipesApi.Endpoints.Portal.AuthEndpoints.MapAuthEndpoints(app);        // Authentication: /api/auth/*
+RecipesApi.Endpoints.Portal.UserEndpoints.MapUserEndpoints(app);        // Users: /api/users/*
+RecipesApi.Endpoints.Portal.RecipeEndpoints.MapRecipeEndpoints(app);    // Recipes: /api/recipes/*
+RecipesApi.Endpoints.Portal.PointsEndpoints.MapPointsEndpoints(app);    // Points: /api/points/*
+RecipesApi.Endpoints.Portal.TradeEndpoints.MapTradeEndpoints(app);      // Trades: /api/trades/*
+
+// Admin endpoints - Administrative API (/admin-api/*)
+RecipesApi.Endpoints.Admin.RecipeAdminEndpoints.MapAdminRecipeEndpoints(app);          // Recipe management: /admin-api/recipes/*
+RecipesApi.Endpoints.Admin.UserAdminEndpoints.MapAdminUserEndpoints(app);              // User management: /admin-api/users/*
+RecipesApi.Endpoints.Admin.TradeAdminEndpoints.MapAdminTradeEndpoints(app);            // Trade monitoring: /admin-api/trades/*
+RecipesApi.Endpoints.Admin.SubscriptionAdminEndpoints.MapAdminSubscriptionEndpoints(app); // Subscription management: /admin-api/subscriptions/*
+RecipesApi.Endpoints.Admin.AnalyticsAdminEndpoints.MapAdminAnalyticsEndpoints(app);    // Analytics: /admin-api/analytics/*
 
 // ==================== START APPLICATION ====================
 
@@ -288,3 +296,7 @@ Console.WriteLine($"Environment: {app.Environment.EnvironmentName}");
 Console.WriteLine($"Database: {connectionString.Split(';')[0]}"); // Just show host
 
 app.Run();
+
+// Make Program class accessible for integration tests
+// This allows WebApplicationFactory to reference Program in test projects
+public partial class Program { }

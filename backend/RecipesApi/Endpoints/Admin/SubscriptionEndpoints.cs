@@ -4,24 +4,24 @@ using Microsoft.EntityFrameworkCore;
 using RecipesApi.Data;
 using RecipesApi.Models;
 
-namespace RecipesApi.Endpoints;
+namespace RecipesApi.Endpoints.Admin;
 
 /// <summary>
 /// Subscription-related API endpoints
 /// Handles CRUD operations for subscription plans (admin)
 /// and subscription purchasing for users
 /// </summary>
-public static class SubscriptionEndpoints
+public static class SubscriptionAdminEndpoints
 {
     /// <summary>
     /// Register all subscription-related endpoints
     /// Groups endpoints under /api/subscriptions
     /// </summary>
-    public static void MapSubscriptionEndpoints(this IEndpointRouteBuilder app)
+    public static void MapAdminSubscriptionEndpoints(this IEndpointRouteBuilder app)
     {
         // Create a route group for all subscription endpoints
         // This prefixes all routes with /api/subscriptions
-        var group = app.MapGroup("/api/subscriptions")
+        var group = app.MapGroup("/admin-api/subscriptions")
             .WithTags("Subscriptions");
 
         // GET /api/subscriptions - Get all active subscription plans (public)

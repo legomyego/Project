@@ -4,7 +4,7 @@ using RecipesApi.Data;
 using RecipesApi.Models;
 using RecipesApi.Services;
 
-namespace RecipesApi.Endpoints;
+namespace RecipesApi.Endpoints.Portal;
 
 /// <summary>
 /// Extension class for registering authentication-related endpoints

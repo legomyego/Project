@@ -58,8 +58,8 @@ export default defineNuxtConfig({
   // Global CSS
   css: ['~/assets/css/main.css'],
 
-  // Enable PWA module
-  modules: ['@vite-pwa/nuxt'],
+  // Enable PWA and Tailwind modules
+  modules: ['@vite-pwa/nuxt', '@nuxtjs/tailwindcss'],
 
   // PWA Configuration
   pwa: {
@@ -104,7 +104,8 @@ export default defineNuxtConfig({
       runtimeCaching: [
         {
           // Cache API responses with network-first strategy
-          urlPattern: /^http:\/\/localhost:5010\/api\/.*/i,
+          // Matches both localhost and recipes.local domain
+          urlPattern: /^http:\/\/(localhost:5010|recipes\.local)\/api\/.*/i,
           handler: 'NetworkFirst',
           options: {
             cacheName: 'api-cache',

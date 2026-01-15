@@ -47,23 +47,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const loadUser = async () => {
       try {
+        console.log('[Admin Auth] Starting auth check...')
+        console.log('[Admin Auth] Current URL:', window.location.href)
+
+        // Check if token is passed in URL (for SSO from main app)
+        const urlParams = new URLSearchParams(window.location.search)
+        const tokenFromUrl = urlParams.get('token')
+
+        console.log('[Admin Auth] Token from URL:', tokenFromUrl ? 'YES (length: ' + tokenFromUrl.length + ')' : 'NO')
+
+        if (tokenFromUrl) {
+          console.log('[Admin Auth] Setting token as cookie...')
+          // Set token as cookie for future requests
+          document.cookie = `auth_token=${tokenFromUrl}; path=/; domain=.recipes.local; max-age=${7 * 24 * 60 * 60}`
+          console.log('[Admin Auth] Cookie set, document.cookie:', document.cookie)
+
+          // Remove token from URL for security
+          window.history.replaceState({}, '', window.location.pathname)
+          console.log('[Admin Auth] Token removed from URL')
+        }
+
         // Try to get current user from backend
         // If auth cookie is valid, this will return user data
+        console.log('[Admin Auth] Fetching user data from API...')
         const userData = await api.auth.getCurrentUser()
+        console.log('[Admin Auth] User data received:', { email: userData.email, isAdmin: userData.isAdmin })
 
         // Only set user if they have admin privileges
         if (userData.isAdmin) {
+          console.log('[Admin Auth] User is admin - setting user state')
           setUser(userData)
         } else {
+          console.log('[Admin Auth] User is NOT admin - logging out')
           // User is authenticated but not an admin - log them out
           await api.auth.logout()
           setUser(null)
         }
       } catch (error) {
+        console.error('[Admin Auth] Error during auth check:', error)
         // If request fails, user is not authenticated
         // This is normal - it just means no valid cookie exists
         setUser(null)
       } finally {
+        console.log('[Admin Auth] Auth check complete')
         // Always stop loading after check completes
         setIsLoading(false)
       }

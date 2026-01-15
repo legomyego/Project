@@ -37,16 +37,12 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@/contexts/AuthContext'
 
 /**
  * RecipesPage component
  * Main page for managing all recipes
  */
 export function RecipesPage() {
-  const navigate = useNavigate()
-  const { logout } = useAuth()
   const queryClient = useQueryClient()
 
   // Pagination state
@@ -320,123 +316,105 @@ export function RecipesPage() {
     pageCount: data?.pagination.totalPages || 0,
   })
 
-  /**
-   * Handle logout
-   */
-  const handleLogout = async () => {
-    await logout()
-    navigate('/login')
-  }
-
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">Recipe Management</h1>
-              <p className="text-sm text-slate-600">
-                {data?.pagination.totalCount || 0} total recipes
-              </p>
-            </div>
-            <div className="flex gap-2">
-              {/* Add Recipe Button with Dialog */}
-              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>Add Recipe</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Create New Recipe</DialogTitle>
-                    <DialogDescription>
-                      Add a new recipe to the system. Fill in all the details below.
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  {/* Recipe Creation Form */}
-                  <form onSubmit={onSubmit} className="space-y-4">
-                    {/* Title Field */}
-                    <div className="space-y-2">
-                      <Label htmlFor="title">Title</Label>
-                      <Input
-                        id="title"
-                        {...register('title', { required: 'Title is required' })}
-                        placeholder="Recipe title"
-                      />
-                      {errors.title && (
-                        <p className="text-sm text-red-500">{errors.title.message}</p>
-                      )}
-                    </div>
-
-                    {/* Description Field */}
-                    <div className="space-y-2">
-                      <Label htmlFor="description">Description</Label>
-                      <Input
-                        id="description"
-                        {...register('description', { required: 'Description is required' })}
-                        placeholder="Recipe description"
-                      />
-                      {errors.description && (
-                        <p className="text-sm text-red-500">{errors.description.message}</p>
-                      )}
-                    </div>
-
-                    {/* Price Field */}
-                    <div className="space-y-2">
-                      <Label htmlFor="price">Price (points)</Label>
-                      <Input
-                        id="price"
-                        type="number"
-                        step="0.01"
-                        {...register('price', {
-                          required: 'Price is required',
-                          min: { value: 0, message: 'Price cannot be negative' },
-                          valueAsNumber: true,
-                        })}
-                        placeholder="0.00"
-                      />
-                      {errors.price && (
-                        <p className="text-sm text-red-500">{errors.price.message}</p>
-                      )}
-                    </div>
-
-                    {/* Error Message from API */}
-                    {createMutation.isError && (
-                      <div className="text-sm text-red-500">
-                        Error: {(createMutation.error as Error).message}
-                      </div>
-                    )}
-
-                    <DialogFooter>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setIsCreateDialogOpen(false)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button type="submit" disabled={createMutation.isPending}>
-                        {createMutation.isPending ? 'Creating...' : 'Create Recipe'}
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
-
-              <Button variant="outline" onClick={() => navigate('/dashboard')}>
-                ← Dashboard
-              </Button>
-              <Button variant="outline" onClick={handleLogout}>
-                Logout
-              </Button>
-            </div>
+    <div className="p-8">
+      {/* Page Title */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">Recipe Management</h1>
+            <p className="text-sm text-slate-600 mt-1">
+              {data?.pagination.totalCount || 0} total recipes
+            </p>
           </div>
+
+          {/* Add Recipe Button with Dialog */}
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>Add Recipe</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Recipe</DialogTitle>
+                <DialogDescription>
+                  Add a new recipe to the system. Fill in all the details below.
+                </DialogDescription>
+              </DialogHeader>
+
+              {/* Recipe Creation Form */}
+              <form onSubmit={onSubmit} className="space-y-4">
+                {/* Title Field */}
+                <div className="space-y-2">
+                  <Label htmlFor="title">Title</Label>
+                  <Input
+                    id="title"
+                    {...register('title', { required: 'Title is required' })}
+                    placeholder="Recipe title"
+                  />
+                  {errors.title && (
+                    <p className="text-sm text-red-500">{errors.title.message}</p>
+                  )}
+                </div>
+
+                {/* Description Field */}
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Input
+                    id="description"
+                    {...register('description', { required: 'Description is required' })}
+                    placeholder="Recipe description"
+                  />
+                  {errors.description && (
+                    <p className="text-sm text-red-500">{errors.description.message}</p>
+                  )}
+                </div>
+
+                {/* Price Field */}
+                <div className="space-y-2">
+                  <Label htmlFor="price">Price (points)</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    {...register('price', {
+                      required: 'Price is required',
+                      min: { value: 0, message: 'Price cannot be negative' },
+                      valueAsNumber: true,
+                    })}
+                    placeholder="0.00"
+                  />
+                  {errors.price && (
+                    <p className="text-sm text-red-500">{errors.price.message}</p>
+                  )}
+                </div>
+
+                {/* Error Message from API */}
+                {createMutation.isError && (
+                  <div className="text-sm text-red-500">
+                    Error: {(createMutation.error as Error).message}
+                  </div>
+                )}
+
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsCreateDialogOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={createMutation.isPending}>
+                    {createMutation.isPending ? 'Creating...' : 'Create Recipe'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
-      </header>
+      </div>
 
       {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div>
         <Card>
           <CardHeader>
             <CardTitle>All Recipes</CardTitle>
@@ -539,7 +517,7 @@ export function RecipesPage() {
             )}
           </CardContent>
         </Card>
-      </main>
+      </div>
 
       {/* Edit Recipe Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

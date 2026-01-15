@@ -4,7 +4,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useAuth } from '@/contexts/AuthContext'
 import { api, type Recipe } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -17,7 +16,6 @@ import { Input } from '@/components/ui/input'
 export function SubscriptionDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { logout } = useAuth()
   const queryClient = useQueryClient()
 
   // State for recipe search and selection
@@ -49,10 +47,6 @@ export function SubscriptionDetailPage() {
         credentials: 'include',
       })
       if (!response.ok) {
-        if (response.status === 401) {
-          logout()
-          throw new Error('Unauthorized')
-        }
         throw new Error('Failed to fetch recipes')
       }
       return response.json() as Promise<{ recipes: Recipe[] }>
@@ -124,7 +118,7 @@ export function SubscriptionDetailPage() {
   // Loading state
   if (isLoadingSubscription || isLoadingRecipes) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="p-8 flex items-center justify-center">
         <div className="text-lg text-muted-foreground">Loading...</div>
       </div>
     )
@@ -133,7 +127,7 @@ export function SubscriptionDetailPage() {
   // Error state
   if (subscriptionError) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="p-8 flex items-center justify-center">
         <div className="text-lg text-destructive">
           Error loading subscription: {(subscriptionError as Error).message}
         </div>
@@ -143,7 +137,7 @@ export function SubscriptionDetailPage() {
 
   if (!subscription) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="p-8 flex items-center justify-center">
         <div className="text-lg text-muted-foreground">Subscription not found</div>
       </div>
     )
@@ -163,25 +157,20 @@ export function SubscriptionDetailPage() {
   const availableRecipes = filteredRecipes.filter(recipe => !assignedRecipeIds.has(recipe.id))
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <Button variant="ghost" onClick={() => navigate('/subscriptions')}>
-              ← Back to Subscriptions
-            </Button>
-            <h1 className="text-2xl font-bold mt-2">{subscription.name}</h1>
-            <p className="text-muted-foreground">{subscription.description}</p>
-          </div>
-          <Button variant="outline" onClick={logout}>
-            Logout
+    <div className="p-8">
+      {/* Page Title */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2 mb-2">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/subscriptions')}>
+            ← Back
           </Button>
         </div>
-      </header>
+        <h1 className="text-3xl font-bold text-slate-900">{subscription.name}</h1>
+        <p className="text-sm text-slate-600 mt-1">{subscription.description}</p>
+      </div>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column: Assigned Recipes */}
           <div>
@@ -249,7 +238,11 @@ export function SubscriptionDetailPage() {
                 <div className="space-y-2 max-h-[500px] overflow-y-auto mb-4">
                   {availableRecipes.length === 0 ? (
                     <p className="text-muted-foreground text-center py-8">
-                      {searchQuery ? 'No recipes found' : 'All recipes are already assigned'}
+                      {searchQuery
+                        ? 'No recipes found'
+                        : allRecipes.length === 0
+                          ? 'No recipes available in the system. Create recipes first.'
+                          : 'All recipes are already assigned'}
                     </p>
                   ) : (
                     availableRecipes.map(recipe => (
@@ -296,7 +289,7 @@ export function SubscriptionDetailPage() {
             </Card>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   )
 }

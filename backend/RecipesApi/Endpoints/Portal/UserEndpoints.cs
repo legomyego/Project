@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using RecipesApi.Data;
 using RecipesApi.Services;
 
-namespace RecipesApi.Endpoints;
+namespace RecipesApi.Endpoints.Portal;
 
 /// <summary>
 /// Extension class for registering user-related endpoints

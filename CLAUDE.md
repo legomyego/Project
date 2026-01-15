@@ -58,11 +58,17 @@ npm run dev
 
 This starts all 3 services in parallel (API, Nuxt, React admin) with live reload.
 
+**Access via local domains:**
+- Main App: http://recipes.local
+- Admin Panel: http://admin.recipes.local
+- API: http://recipes.local/api
+
 **Alternative methods:**
 - **Docker:** `docker-compose up -d` (production-ready with nginx)
-- **macOS script:** `./start-dev.sh` (opens separate Terminal tabs)
+- **macOS script:** `./dev-tools/scripts/start-dev.sh` (opens separate Terminal tabs)
 
-See [START.md](START.md) for detailed instructions, troubleshooting, and all available commands.
+See [dev-tools/docs/START.md](dev-tools/docs/START.md) for detailed instructions, troubleshooting, and all available commands.
+See [dev-tools/docs/DOMAINS.md](dev-tools/docs/DOMAINS.md) for local domain configuration and nginx setup.
 
 ## Caching Strategy
 

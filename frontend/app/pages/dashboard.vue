@@ -4,9 +4,9 @@
     <header class="dashboard-header">
       <h1>Dashboard</h1>
       <div class="header-actions">
-        <a v-if="user?.isAdmin" :href="adminUrl" class="btn-admin">
+        <button v-if="user?.isAdmin" @click="goToAdminPanel" class="btn-admin">
           Admin Panel
-        </a>
+        </button>
         <button @click="handleLogout" class="btn-logout">Logout</button>
       </div>
     </header>
@@ -177,7 +177,9 @@ const router = useRouter()
 
 // Get runtime config for admin URL
 const config = useRuntimeConfig()
-const adminUrl = config.public.adminUrl || 'http://localhost:5173'
+
+// Computed admin URL with token for SSO
+// Gets token from cookie and passes it as URL parameter
 
 // Top-up form state
 const topupAmount = ref<number | null>(null)
@@ -255,6 +257,20 @@ const handleTopUp = async () => {
   }
 
   isTopupLoading.value = false
+}
+
+/**
+ * Navigate to admin panel with token for SSO
+ */
+const goToAdminPanel = () => {
+  const baseUrl = config.public.adminUrl || 'http://localhost:5173'
+  const token = useCookie('auth_token')
+
+  if (token.value) {
+    window.location.href = `${baseUrl}?token=${token.value}`
+  } else {
+    window.location.href = baseUrl
+  }
 }
 
 /**

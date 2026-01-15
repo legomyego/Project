@@ -3,12 +3,9 @@
 
 import Cookies from 'js-cookie'
 
-// Base URLs for different API sections
-// API_BASE_URL: Public and user endpoints (/api)
-// ADMIN_API_BASE_URL: Admin-only endpoints requiring admin privileges (/admin-api)
+// Base API URL - uses /api path which nginx proxies to backend
 // In dev mode through domain (admin.recipes.local), nginx handles the routing
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5173/api'
-const ADMIN_API_BASE_URL = import.meta.env.VITE_ADMIN_API_BASE_URL || 'http://localhost:5173/admin-api'
 
 /**
  * Type definitions for API requests and responses
@@ -93,7 +90,7 @@ export interface SubscriptionDetail extends Subscription {
 }
 
 /**
- * Generic API request helper for public/user endpoints
+ * Generic API request helper
  * Automatically includes credentials for cookie-based auth
  */
 async function apiRequest<T>(
@@ -101,33 +98,6 @@ async function apiRequest<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    credentials: 'include', // Include cookies in requests
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  })
-
-  // Check if response is OK (status 200-299)
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Request failed' }))
-    throw new Error(error.error || `HTTP ${response.status}`)
-  }
-
-  return response.json()
-}
-
-/**
- * Generic API request helper for admin-only endpoints
- * Uses separate /admin-api base URL for operations requiring admin privileges
- * Automatically includes credentials for cookie-based auth
- */
-async function adminApiRequest<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const response = await fetch(`${ADMIN_API_BASE_URL}${endpoint}`, {
     ...options,
     credentials: 'include', // Include cookies in requests
     headers: {
@@ -214,8 +184,7 @@ export const api = {
     },
 
     /**
-     * Update an existing recipe (admin)
-     * Uses admin API endpoint
+     * Update an existing recipe
      */
     update: async (id: string, data: {
       title?: string
@@ -223,18 +192,17 @@ export const api = {
       price?: number
       requiresSubscription?: boolean
     }): Promise<Recipe> => {
-      return adminApiRequest<Recipe>(`/recipes/${id}`, {
+      return apiRequest<Recipe>(`/api/recipes/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
       })
     },
 
     /**
-     * Delete a recipe (admin)
-     * Uses admin API endpoint
+     * Delete a recipe
      */
     delete: async (id: string): Promise<{ message: string; deletedRecipeId: string }> => {
-      return adminApiRequest(`/recipes/${id}`, {
+      return apiRequest(`/api/recipes/${id}`, {
         method: 'DELETE',
       })
     },
@@ -244,26 +212,23 @@ export const api = {
   subscriptions: {
     /**
      * Get all subscriptions (admin)
-     * Uses admin API endpoint
      */
     getAll: async (): Promise<Subscription[]> => {
-      return adminApiRequest<Subscription[]>('/subscriptions')
+      return apiRequest<Subscription[]>('/api/subscriptions')
     },
 
     /**
-     * Get subscription by ID with recipes (admin)
-     * Uses admin API endpoint
+     * Get subscription by ID with recipes
      */
     getById: async (id: string): Promise<SubscriptionDetail> => {
-      return adminApiRequest<SubscriptionDetail>(`/subscriptions/${id}`)
+      return apiRequest<SubscriptionDetail>(`/api/subscriptions/${id}`)
     },
 
     /**
      * Create new subscription (admin)
-     * Uses admin API endpoint
      */
     create: async (data: { name: string; description?: string; durationDays: number; price: number }): Promise<Subscription> => {
-      return adminApiRequest<Subscription>('/subscriptions', {
+      return apiRequest<Subscription>('/api/subscriptions', {
         method: 'POST',
         body: JSON.stringify(data),
       })
@@ -271,10 +236,9 @@ export const api = {
 
     /**
      * Update subscription (admin)
-     * Uses admin API endpoint
      */
     update: async (id: string, data: { name: string; description?: string; durationDays: number; price: number; isActive: boolean }): Promise<Subscription> => {
-      return adminApiRequest<Subscription>(`/subscriptions/${id}`, {
+      return apiRequest<Subscription>(`/api/subscriptions/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
       })
@@ -282,20 +246,18 @@ export const api = {
 
     /**
      * Delete subscription (admin)
-     * Uses admin API endpoint
      */
     delete: async (id: string): Promise<void> => {
-      return adminApiRequest<void>(`/subscriptions/${id}`, {
+      return apiRequest<void>(`/api/subscriptions/${id}`, {
         method: 'DELETE',
       })
     },
 
     /**
      * Add recipes to subscription (admin)
-     * Uses admin API endpoint
      */
     addRecipes: async (id: string, recipeIds: string[]): Promise<void> => {
-      return adminApiRequest<void>(`/subscriptions/${id}/recipes`, {
+      return apiRequest<void>(`/api/subscriptions/${id}/recipes`, {
         method: 'POST',
         body: JSON.stringify({ recipeIds }),
       })
@@ -303,73 +265,11 @@ export const api = {
 
     /**
      * Remove recipe from subscription (admin)
-     * Uses admin API endpoint
      */
     removeRecipe: async (id: string, recipeId: string): Promise<void> => {
-      return adminApiRequest<void>(`/subscriptions/${id}/recipes/${recipeId}`, {
+      return apiRequest<void>(`/api/subscriptions/${id}/recipes/${recipeId}`, {
         method: 'DELETE',
       })
-    },
-  },
-
-  // Analytics endpoints (admin)
-  analytics: {
-    /**
-     * Get dashboard analytics summary
-     */
-    getDashboard: async () => {
-      return adminApiRequest('/analytics/dashboard')
-    },
-
-    /**
-     * Get user growth analytics
-     */
-    getUserGrowth: async (period: 'daily' | 'weekly' | 'monthly' = 'daily', days: number = 30) => {
-      return adminApiRequest(`/analytics/user-growth?period=${period}&days=${days}`)
-    },
-
-    /**
-     * Get revenue analytics
-     */
-    getRevenue: async (period: 'daily' | 'weekly' | 'monthly' = 'daily', days: number = 30) => {
-      return adminApiRequest(`/analytics/revenue?period=${period}&days=${days}`)
-    },
-
-    /**
-     * Get transaction trends
-     */
-    getTransactions: async (period: 'daily' | 'weekly' | 'monthly' = 'daily', days: number = 30) => {
-      return adminApiRequest(`/analytics/transactions?period=${period}&days=${days}`)
-    },
-  },
-
-  // Users endpoints (admin)
-  users: {
-    /**
-     * Get all users with pagination (admin)
-     */
-    getAll: async (page: number = 1, pageSize: number = 20, search?: string) => {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        pageSize: pageSize.toString(),
-      })
-      if (search) params.append('search', search)
-      return adminApiRequest(`/users?${params.toString()}`)
-    },
-  },
-
-  // Trades endpoints (admin)
-  trades: {
-    /**
-     * Get all trades with pagination (admin)
-     */
-    getAll: async (page: number = 1, pageSize: number = 20, status?: string) => {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        pageSize: pageSize.toString(),
-      })
-      if (status) params.append('status', status)
-      return adminApiRequest(`/trades?${params.toString()}`)
     },
   },
 

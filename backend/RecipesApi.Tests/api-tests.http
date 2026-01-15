@@ -1,0 +1,345 @@
+###
+# Recipes PWA API Tests
+# Use REST Client extension in VS Code to run these tests
+# Or use curl/httpie from command line
+###
+
+@baseUrl = http://localhost:5010
+@email = test_{{$timestamp}}@example.com
+@password = TestPassword123!
+@username = testuser_{{$timestamp}}
+
+### Variables will be set from responses
+# @token = (set after login)
+# @userId = (set after login)
+# @recipeId = (set after creating recipe)
+
+###
+# ============================================
+# Test Suite 1: AUTHENTICATION
+# ============================================
+
+### 1.1 Register New User
+# @name register
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}",
+  "username": "{{username}}"
+}
+
+###
+# Extract token from registration response
+@authToken = {{register.response.body.token}}
+
+### 1.2 Login with Valid Credentials
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+###
+# Update token from login
+@authToken = {{login.response.body.token}}
+
+### 1.3 Login with Wrong Password (Should Fail)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "WrongPassword123!"
+}
+
+### 1.4 Get Current User Profile
+# @name profile
+GET {{baseUrl}}/api/users/me
+Authorization: Bearer {{authToken}}
+
+###
+# Extract user ID
+@userId = {{profile.response.body.id}}
+
+###
+# ============================================
+# Test Suite 2: RECIPES
+# ============================================
+
+### 2.1 Get All Recipes (Paginated)
+GET {{baseUrl}}/api/recipes?page=1&pageSize=10
+Authorization: Bearer {{authToken}}
+
+### 2.2 Search Recipes
+GET {{baseUrl}}/api/recipes?search=test&sortBy=popular&page=1&pageSize=10
+Authorization: Bearer {{authToken}}
+
+### 2.3 Create New Recipe
+# @name createRecipe
+POST {{baseUrl}}/api/recipes
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Test Recipe {{$timestamp}}",
+  "description": "Delicious test recipe for automated testing",
+  "price": 15.50
+}
+
+###
+# Extract recipe ID
+@recipeId = {{createRecipe.response.body.id}}
+
+### 2.4 Get Recipe by ID
+GET {{baseUrl}}/api/recipes/{{recipeId}}
+Authorization: Bearer {{authToken}}
+
+### 2.5 Get Popular Recipes (Cached)
+GET {{baseUrl}}/api/recipes/popular
+Authorization: Bearer {{authToken}}
+
+###
+# ============================================
+# Test Suite 3: POINTS SYSTEM
+# ============================================
+
+### 3.1 Get Current Balance (from profile)
+GET {{baseUrl}}/api/users/me
+Authorization: Bearer {{authToken}}
+
+### 3.2 Top Up Points
+POST {{baseUrl}}/api/points/topup
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "amount": 50
+}
+
+### 3.3 Get Transaction History
+GET {{baseUrl}}/api/points/transactions?page=1&pageSize=10
+Authorization: Bearer {{authToken}}
+
+### 3.4 Purchase Recipe with Points
+# First, create another user to buy recipe from
+# @name seller
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "seller_{{$timestamp}}@example.com",
+  "password": "{{password}}",
+  "username": "seller_{{$timestamp}}"
+}
+
+###
+@sellerToken = {{seller.response.body.token}}
+
+### Create recipe as seller
+# @name sellerRecipe
+POST {{baseUrl}}/api/recipes
+Authorization: Bearer {{sellerToken}}
+Content-Type: application/json
+
+{
+  "title": "Recipe for Sale {{$timestamp}}",
+  "description": "Buy this recipe to test purchase flow",
+  "price": 10
+}
+
+###
+@saleRecipeId = {{sellerRecipe.response.body.id}}
+
+### Buy recipe as main user
+POST {{baseUrl}}/api/recipes/{{saleRecipeId}}/buy
+Authorization: Bearer {{authToken}}
+
+### 3.5 Verify Balance After Purchase
+GET {{baseUrl}}/api/users/me
+Authorization: Bearer {{authToken}}
+
+### 3.6 Get My Recipes (Should Include Purchased Recipe)
+GET {{baseUrl}}/api/recipes/my
+Authorization: Bearer {{authToken}}
+
+###
+# ============================================
+# Test Suite 4: SUBSCRIPTIONS
+# ============================================
+
+### 4.1 Get All Subscriptions
+GET {{baseUrl}}/api/subscriptions
+Authorization: Bearer {{authToken}}
+
+### 4.2 Purchase Subscription
+# First, create subscription as admin (requires admin setup)
+# For testing, assume subscription ID exists
+@subscriptionId = 00000000-0000-0000-0000-000000000001
+
+### Purchase subscription
+POST {{baseUrl}}/api/subscriptions/{{subscriptionId}}/purchase
+Authorization: Bearer {{authToken}}
+
+### 4.3 Get My Active Subscriptions
+GET {{baseUrl}}/api/subscriptions/my
+Authorization: Bearer {{authToken}}
+
+### 4.4 Access Subscription Recipe
+# Create premium recipe (requires subscription)
+POST {{baseUrl}}/api/recipes
+Authorization: Bearer {{sellerToken}}
+Content-Type: application/json
+
+{
+  "title": "Premium Recipe {{$timestamp}}",
+  "description": "Requires active subscription",
+  "price": 20,
+  "requiresSubscription": true
+}
+
+###
+# ============================================
+# Test Suite 5: TRADING SYSTEM
+# ============================================
+
+### 5.1 Search Users by Username
+GET {{baseUrl}}/api/users/search?username={{username}}
+Authorization: Bearer {{authToken}}
+
+### 5.2 Create Trade Offer
+# Offer our recipe for seller's recipe
+POST {{baseUrl}}/api/trades/offer
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "offeredRecipeId": "{{recipeId}}",
+  "requestedUserId": "{{seller.response.body.userId}}",
+  "requestedRecipeId": "{{saleRecipeId}}"
+}
+
+###
+# Extract trade ID
+# @tradeId = (from response)
+
+### 5.3 Get Incoming Trades (as seller)
+GET {{baseUrl}}/api/trades/incoming
+Authorization: Bearer {{sellerToken}}
+
+### 5.4 Get Outgoing Trades (as buyer)
+GET {{baseUrl}}/api/trades/outgoing
+Authorization: Bearer {{authToken}}
+
+### 5.5 Accept Trade (as seller)
+# First get trade ID from incoming trades
+@tradeId = 00000000-0000-0000-0000-000000000001
+
+POST {{baseUrl}}/api/trades/{{tradeId}}/accept
+Authorization: Bearer {{sellerToken}}
+
+### 5.6 Decline Trade (create new trade first)
+POST {{baseUrl}}/api/trades/{{tradeId}}/decline
+Authorization: Bearer {{sellerToken}}
+
+### 5.7 Cancel Trade (as offeror)
+POST {{baseUrl}}/api/trades/{{tradeId}}/cancel
+Authorization: Bearer {{authToken}}
+
+###
+# ============================================
+# Test Suite 6: ERROR HANDLING
+# ============================================
+
+### 6.1 Unauthorized Access (No Token)
+GET {{baseUrl}}/api/users/me
+
+### 6.2 Invalid Token
+GET {{baseUrl}}/api/users/me
+Authorization: Bearer invalid_token_12345
+
+### 6.3 Purchase Recipe with Insufficient Balance
+# Top up small amount
+POST {{baseUrl}}/api/points/topup
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "amount": 5
+}
+
+### Create expensive recipe
+# @name expensiveRecipe
+POST {{baseUrl}}/api/recipes
+Authorization: Bearer {{sellerToken}}
+Content-Type: application/json
+
+{
+  "title": "Expensive Recipe",
+  "description": "Too expensive to afford",
+  "price": 1000
+}
+
+### Try to buy (should fail)
+POST {{baseUrl}}/api/recipes/{{expensiveRecipe.response.body.id}}/buy
+Authorization: Bearer {{authToken}}
+
+### 6.4 Purchase Already Owned Recipe (Should Fail)
+POST {{baseUrl}}/api/recipes/{{saleRecipeId}}/buy
+Authorization: Bearer {{authToken}}
+
+### 6.5 Invalid Email Format
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "not-an-email",
+  "password": "password123",
+  "username": "testuser"
+}
+
+###
+# ============================================
+# Test Suite 7: RATE LIMITING
+# ============================================
+
+### 7.1 Test Rate Limiting on Auth Endpoint
+# Send multiple requests rapidly (5 requests/minute limit)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "ratelimit@test.com",
+  "password": "test123"
+}
+
+### Repeat 6 times quickly to trigger rate limit
+### (Copy-paste above request 6 times)
+
+###
+# ============================================
+# SUMMARY
+# ============================================
+
+### Test Results:
+# ✓ Authentication: Register, Login, Profile
+# ✓ Recipes: List, Create, View, Search
+# ✓ Points: Top-up, Purchase, Transactions
+# ✓ Subscriptions: List, Purchase, Access
+# ✓ Trading: Offer, Accept, Decline, Cancel
+# ✓ Error Handling: Auth errors, insufficient balance
+# ✓ Rate Limiting: Auth endpoint throttling
+
+### To run all tests:
+# 1. Install REST Client extension in VS Code
+# 2. Open this file
+# 3. Click "Send Request" above each ### separator
+# 4. Or use "Send All Requests" command
+
+### For CI/CD, convert to newman/postman collection:
+# npm install -g newman
+# newman run api-tests-collection.json

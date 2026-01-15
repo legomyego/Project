@@ -4,7 +4,7 @@ Progressive Web App for buying, selling, and trading recipes with points economy
 
 ## 🚀 Quick Start
 
-> **⚠️ Важно:** После клонирования проекта создай админа: `./create-admin.sh`
+> **⚠️ Важно:** После клонирования проекта создай админа: `./dev-tools/scripts/create-admin.sh`
 >
 > Пароли хранятся в `.credentials` (не коммитится в git)
 
@@ -38,6 +38,25 @@ docker-compose logs -f
 
 ### Option 2: Manual Development Setup
 
+**Quick Start (One Command)**
+```bash
+npm run dev  # Starts all 3 services in parallel
+```
+
+**Access via local domains (recommended):**
+- Main App: http://recipes.local
+- Admin Panel: http://admin.recipes.local
+- API: http://recipes.local/api
+
+> See [dev-tools/docs/DOMAINS.md](dev-tools/docs/DOMAINS.md) for nginx configuration and troubleshooting.
+
+**Or access via localhost ports:**
+- Main App: http://localhost:3000
+- Admin Panel: http://localhost:5173
+- API: http://localhost:5010
+
+**Manual Setup (Step by Step)**
+
 **1. Start PostgreSQL**
 ```bash
 docker-compose up -d db
@@ -57,14 +76,14 @@ dotnet run                 # Starts on http://localhost:5010
 ```bash
 cd frontend/app
 npm install
-npm run dev  # Starts on http://localhost:3000
+npm run dev  # Starts on http://localhost:3000 (or http://recipes.local via nginx)
 ```
 
 **4. Frontend Admin (React)**
 ```bash
 cd frontend/admin
 npm install
-npm run dev  # Starts on http://localhost:5173
+npm run dev  # Starts on http://localhost:5173 (or http://admin.recipes.local via nginx)
 ```
 
 ## 📚 Tech Stack
@@ -295,6 +314,66 @@ docker push your-registry/recipes-api:latest
 docker pull your-registry/recipes-api:latest
 docker run -d -p 5010:5010 your-registry/recipes-api:latest
 ```
+
+## 📁 Project Structure
+
+```
+recipes-pwa/
+├── backend/
+│   └── RecipesApi/
+│       ├── Endpoints/
+│       │   ├── Portal/       # Public API (/api/*)
+│       │   │   ├── AuthEndpoints.cs
+│       │   │   ├── PointsEndpoints.cs
+│       │   │   ├── RecipeEndpoints.cs
+│       │   │   ├── TradeEndpoints.cs
+│       │   │   └── UserEndpoints.cs
+│       │   └── Admin/        # Admin API (/admin-api/*)
+│       │       ├── AnalyticsEndpoints.cs
+│       │       ├── RecipeEndpoints.cs
+│       │       ├── SubscriptionEndpoints.cs
+│       │       ├── TradeEndpoints.cs
+│       │       └── UserEndpoints.cs
+│       ├── Data/             # DbContext, Migrations
+│       ├── Models/           # Entity models
+│       └── Services/         # Business logic
+│
+├── frontend/
+│   ├── app/                  # Nuxt 3 main application
+│   │   ├── pages/           # Vue pages
+│   │   ├── components/      # Vue components
+│   │   └── composables/     # Vue composables
+│   └── admin/               # React admin panel
+│       ├── src/
+│       │   ├── pages/       # React pages
+│       │   ├── components/  # React components
+│       │   └── lib/         # API client, utilities
+│       └── public/
+│
+├── dev-tools/
+│   ├── docs/                # Documentation
+│   │   ├── DOMAINS.md
+│   │   ├── START.md
+│   │   └── ...
+│   └── scripts/             # Utility scripts
+│       ├── create-admin.sh
+│       ├── start-dev.sh
+│       └── ...
+│
+├── nginx/                   # Nginx config for reverse proxy
+├── CLAUDE.md               # Project overview and development plan
+├── README.md               # This file
+├── docker-compose.yml      # Docker orchestration
+└── package.json            # Root npm scripts
+```
+
+**Key Directories:**
+- `backend/RecipesApi/Endpoints/Portal/` - Public API endpoints for users
+- `backend/RecipesApi/Endpoints/Admin/` - Admin-only API endpoints
+- `frontend/app/` - Main PWA (Vue 3 + Nuxt 3)
+- `frontend/admin/` - Admin panel (React + Vite)
+- `dev-tools/docs/` - All documentation files
+- `dev-tools/scripts/` - Development and admin scripts
 
 ## 🔒 Security
 
